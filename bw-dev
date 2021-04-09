@@ -12,10 +12,14 @@ trap showerr EXIT
 source .env
 trap - EXIT
 
-# show commands as they're executed
-set -x
+function clean {
+    docker-compose stop
+    docker-compose rm -f
+}
+
 function runweb {
     docker-compose run --rm web "$@"
+    clean
 }
 
 function execdb {
@@ -27,8 +31,12 @@ function execweb {
 }
 
 function initdb {
-    execweb python manage.py migrate
-    execweb python manage.py initdb
+    execweb poetry run python manage.py migrate
+    execweb poetry run python manage.py initdb
+}
+
+function makeitblack {
+    docker-compose run --rm web poetry run black celerywyrm bookwyrm
 }
 
 CMD=$1
@@ -47,17 +55,26 @@ case "$CMD" in
     initdb)
         initdb
         ;;
+    resetdb)
+        clean
+        docker-compose up --build -d
+        execdb dropdb -U ${POSTGRES_USER} ${POSTGRES_DB}
+        execdb createdb -U ${POSTGRES_USER} ${POSTGRES_DB}
+        initdb
+        clean
+        ;;
     makemigrations)
-        runweb python manage.py makemigrations "$@"
+        execweb poetry run python manage.py makemigrations "$@"
         ;;
     migrate)
-        runweb python manage.py migrate "$@"
+        execweb poetry run python manage.py rename_app fedireads bookwyrm
+        execweb poetry run python manage.py migrate "$@"
         ;;
     bash)
-        runweb bash
+        execweb bash
         ;;
     shell)
-        runweb python manage.py shell
+        execweb poetry run python manage.py shell
         ;;
     dbshell)
         execdb psql -U ${POSTGRES_USER} ${POSTGRES_DB}
@@ -65,23 +82,37 @@ case "$CMD" in
     restart_celery)
         docker-compose restart celery_worker
         ;;
+    test)
+        execweb poetry run coverage run --source='.' --omit="*/test*,celerywyrm*,bookwyrm/migrations/*" manage.py test "$@"
+        ;;
+    pytest)
+        execweb poetry run pytest --no-cov-on-fail "$@"
+        ;;
+    test_report)
+        execweb poetry run coverage report
+        ;;
     collectstatic)
-        runweb python manage.py collectstatic --no-input
+        execweb poetry run python manage.py collectstatic --no-input
+        ;;
+    makemessages)
+        execweb django-admin makemessages --no-wrap --ignore=venv3 $@
+        ;;
+    compilemessages)
+        execweb django-admin compilemessages --ignore venv3 $@
         ;;
     build)
         docker-compose build
         ;;
-    update)
-        git pull
-        docker-compose build
-        docker-compose exec web python manage.py migrate
-        docker-compose exec web python manage.py collectstatic --no-input
-        docker-compose restart
+    clean)
+        clean
         ;;
-    populate_streams)
-        runweb python manage.py populate_streams
+    black)
+        makeitblack
+        ;;
+    populate_feeds)
+        execweb poetry run python manage.py populate_streams
         ;;
     *)
-        echo "Unrecognised command. Try: build, up, initdb, makemigrations, migrate, bash, shell, dbshell, restart_celery, update, populate_feeds"
+        echo "Unrecognised command. Try: build, clean, up, initdb, resetdb, makemigrations, migrate, bash, shell, dbshell, restart_celery, test, pytest, test_report, black, populate_feeds"
         ;;
 esac
