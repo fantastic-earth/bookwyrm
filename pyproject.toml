@@ -4,6 +4,8 @@ version = "0.1.0"
 description = ""
 authors = ["Mouse Reeve <mousereeve@riseup.net>"]
 
+packages = [ { include = "bookwyrm"}, { include = "celerywyrm" } ]
+
 [tool.poetry.dependencies]
 python = "^3.9"
 celery = "4.4.2"
