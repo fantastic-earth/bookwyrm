@@ -113,7 +113,7 @@ BOOKWYRM_DBS = {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
         "NAME": env("POSTGRES_DB", "fedireads"),
         "USER": env("POSTGRES_USER", "fedireads"),
-        "PASSWORD": env("POSTGRES_PASSWORD", "fedireads"),
+        "PASSWORD": env("POSTGRES_PASSWORD", ""),
         "HOST": env("POSTGRES_HOST", ""),
         "PORT": 5432,
     },
