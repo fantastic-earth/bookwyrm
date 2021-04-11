@@ -8,6 +8,7 @@ r = redis.Redis(
     host=settings.REDIS_ACTIVITY_HOST,
     port=settings.REDIS_ACTIVITY_PORT,
     password=settings.REDIS_ACTIVITY_PASSWORD,
+    unix_socket_path=settings.REDIS_ACTIVITY_SOCKET,
     db=0,
 )
 
