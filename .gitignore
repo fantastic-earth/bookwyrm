@@ -28,3 +28,6 @@
 
 #Node tools
 /node_modules/
+
+# nix build output
+/result/
