@@ -396,8 +396,8 @@ in
       script = ''
         ${concatStringsSep "\n" (mapAttrsToList (n: v: ''export ${n}="$(cat '${v}')"'') envSecrets)}
         exec ${bookwyrm}/bin/gunicorn bookwyrm.wsgi:application \
-          ${concatStringsSep " " (map (elem: "--bind ${elem}") cfg.bindTo)}
-          --umask 0660
+          ${concatStringsSep " " (map (elem: "--bind ${elem}") cfg.bindTo)} \
+          --umask 0007
       '';
     };
 
