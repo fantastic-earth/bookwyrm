@@ -291,7 +291,7 @@ in
   config = mkIf cfg.enable {
     warnings = 
       (optional (cfg.secretKey != "") "config.services.bookwyrm.secretKey will be stored in plain text in the Nix store, where it will be world readable. To avoid this, consider using config.services.bookwyrm.secretKeyFile instead.")
-      ++ (optional (cfg.database.password != "" && cfg.database.passwordFile == null) "config.services.bookwyrm.database.password will be stored in plain text in the Nix store, where it will be world readable. To avoid this, consider using config.services.bookwyrm.database.passwordFile instead.")
+      ++ (optional (cfg.database.password != "") "config.services.bookwyrm.database.password will be stored in plain text in the Nix store, where it will be world readable. To avoid this, consider using config.services.bookwyrm.database.passwordFile instead.")
       ++ (optional (cfg.email.password != "") "config.services.bookwyrm.email.password will be stored in plain text in the Nix store, where it will be world readable. To avoid this, consider using config.services.bookwyrm.email.passwordFile instead.");
 
     assertions = [
@@ -310,12 +310,10 @@ in
       })));
 
     services.bookwyrm.database.passwordFile = 
-      if cfg.database.password != "" && cfg.database.passwordFile == null then
-        (toString (pkgs.writeTextFile {
+      (mkDefault (toString (pkgs.writeTextFile {
           name = "bookwyrm-secretkeyfile";
           text = cfg.database.password;
-        }))
-      else null;
+      })));
 
     services.bookwyrm.email.passwordFile = 
       (mkDefault (toString (pkgs.writeTextFile {
