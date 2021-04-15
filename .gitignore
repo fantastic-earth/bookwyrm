@@ -31,3 +31,6 @@
 
 # nix build output
 /result/
+
+#nginx
+nginx/default.conf
