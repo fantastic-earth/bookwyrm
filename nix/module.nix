@@ -15,6 +15,7 @@ let
   env = {
     DEBUG = if cfg.debug then "true" else "false";
     DOMAIN = cfg.domain;
+    ALLOWED_HOSTS = lib.concatStringsSep "," cfg.allowedHosts;
     BOOKWYRM_DATABASE_BACKEND = "postgres";
     MEDIA_ROOT = (builtins.toPath cfg.stateDir) + "/images";
     STATIC_ROOT = (builtins.toPath cfg.stateDir) + "/static";
@@ -117,10 +118,13 @@ in
 
     allowedHosts = mkOption {
       type = types.listOf types.str;
-      default = [ ];
+      default = [ "*" ];
+      example = [ "bookwyrm.example.com" ];
       description = ''
         List of hosts to allow, checked against the <literal>Host:</literal>
-        header. Leave empty to accept all hosts.
+        header. Leave default to accept all hosts.
+      '';
+    };
 
     debug = mkOption { 
       type = types.bool;
