@@ -41,6 +41,7 @@ Bookwyrm can be enabled with a configuration similar to this:
     enable = true;
     secretKey = "verysecret123";
     domain = "bookwyrm.example.com";
+    allowedHosts = [ "bookwyrm.example.com" ];
     flowerArgs = [ "--port=8888" ];
     database = {
       user = "bookwyrm";
@@ -64,13 +65,13 @@ Bookwyrm can be enabled with a configuration similar to this:
   };
 ```
 
-For detailed list options see the `module.nix` source file (there is currently no generated documentation for them). If working with a secret vault (like [sops-nix](https://github.com/Mic92/sops-nix)), secrets can be supplied as file paths instead (for example `services.bookwyrm.secretKeyPath`), per the usual nixpkgs convention. 
+For detailed list options see the `module.nix` source file (there is currently no generated documentation for them). If working with a secret vault (like [sops-nix](https://github.com/Mic92/sops-nix)), secrets can be supplied as file paths instead (for example `services.bookwyrm.secretKeyFile`), per the usual nixpkgs convention. 
 
 `services.bookwyrm.activityRedis.createLocally` and `services.bookwyrm.celeryRedis.createLocally` will start up Redis locally, and connect to it over TCP (the default for Redis on NixOS 20.09 does not provide a unix socket). If Redis is configured to listen on a socket, `services.bookwyrm.activityRedis.unixSocket` and `services.bookwyrm.celeryRedis.unixSocket` can be used instead. 
 
 The Docker deployment of Bookwyrm uses two separate containers of Redis, while this Nix module uses the same instance of Redis for both. NixOS 20.09 does not provide a simple way to run multiple instances of Redis, but you could use [NixOS containers](https://nixos.org/manual/nixos/stable/#ch-containers) to imitate the Docker setup. 
 
-The module currently does not set up nginx, so you will have to do it yourself, including providing HTTP Basic Authentication for Flower, which otherwise has no inbuilt user accounts. An example:
+The module currently does not set up nginx, so you will have to do it yourself, including providing HTTP Basic Authentication for Flower, which otherwise has no inbuilt user accounts. An example, which assumes your Flower was configured with `flowerArgs = [ "--unix_socket=/run/bookwyrm/bookwyrm-flower.sock" ];`:
 
 ```nix
   services.nginx.virtualHosts."bookwyrm.example.com" = {
@@ -123,6 +124,6 @@ bookwyrm=# CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 ## Running
 
-Enabling this module provides a `bookwyrm-manage` executable in PATH, equivalent to running Bookwyrm's `manage.py`; see [Django documentation on manage.py](https://docs.djangoproject.com/en/3.1/ref/django-admin/) for some details. Note that database migrations and static content populating are done automatically on startup and do not have to be done manually
+Enabling this module provides a `bookwyrm-manage` executable in PATH, equivalent to running Bookwyrm's `manage.py`; see [Django documentation on manage.py](https://docs.djangoproject.com/en/3.1/ref/django-admin/) for some details. Note that database migrations and static content populating are done automatically on startup and do not have to be done manually.
 
 The Systemd units are `bookwyrm.service`, `bookwyrm-celery.service`, and `bookwyrm-flower.service`. If you want to follow them with `journalctl` for troubleshooting purposes, you can do: `journalctl -efu bookwyrm-flower -u bookwyrm-celery -u bookwyrm`. The target for the Bookwyrm services is `bookwyrm.target`: `systemctl list-dependencies bookwyrm.target`.
