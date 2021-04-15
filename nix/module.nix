@@ -13,7 +13,7 @@ let
     else
       "redis://${cfg.celeryRedis.host}:${toString cfg.celeryRedis.port}/0";
   env = {
-    DEBUG = "true";
+    DEBUG = "false";
     DOMAIN = cfg.domain;
     BOOKWYRM_DATABASE_BACKEND = "postgres";
     MEDIA_ROOT = (builtins.toPath cfg.stateDir) + "/images";
