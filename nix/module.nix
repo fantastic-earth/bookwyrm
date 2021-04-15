@@ -13,7 +13,7 @@ let
     else
       "redis://${cfg.celeryRedis.host}:${toString cfg.celeryRedis.port}/0";
   env = {
-    DEBUG = "false";
+    DEBUG = if cfg.debug then "true" else "false";
     DOMAIN = cfg.domain;
     BOOKWYRM_DATABASE_BACKEND = "postgres";
     MEDIA_ROOT = (builtins.toPath cfg.stateDir) + "/images";
@@ -121,6 +121,13 @@ in
       description = ''
         List of hosts to allow, checked against the <literal>Host:</literal>
         header. Leave empty to accept all hosts.
+
+    debug = mkOption { 
+      type = types.bool;
+      default = false;
+      description = ''
+        Whether to enable debug mode. Debug mode should not be used in
+        production, but provides more verbose logging. 
       '';
     };
 
