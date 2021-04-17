@@ -5,6 +5,7 @@ with lib;
 let 
   pinnedPkgs = import (builtins.fetchTarball {
     url = "https://github.com/NixOS/nixpkgs/archive/949d727aaf327384530ebf5a23dd138a7f93ce29.tar.gz";
+    sha256 = "086wqa8ycnvpjzd61av4va5wp17d7fyfinxhf0cqq7cimsc8nd31";
   }) { };
   bookwyrm = (pinnedPkgs.callPackage ./default.nix { });
   cfg = config.services.bookwyrm;
