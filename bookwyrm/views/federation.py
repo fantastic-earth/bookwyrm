@@ -24,12 +24,7 @@ class Federation(View):
 
     def get(self, request):
         """ list of servers """
-        try:
-            page = int(request.GET.get("page", 1))
-        except ValueError:
-            page = 1
-
-        servers = models.FederatedServer.objects.all()
+        servers = models.FederatedServer.objects
 
         sort = request.GET.get("sort")
         sort_fields = ["created_date", "application_type", "server_name"]
@@ -40,7 +35,7 @@ class Federation(View):
         paginated = Paginator(servers, PAGE_LENGTH)
 
         data = {
-            "servers": paginated.page(page),
+            "servers": paginated.get_page(request.GET.get("page")),
             "sort": sort,
             "form": forms.ServerForm(),
         }
