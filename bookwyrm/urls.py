@@ -43,7 +43,7 @@ urlpatterns = [
     re_path("^api/updates/notifications/?$", views.get_notification_count),
     re_path("^api/updates/stream/(?P<stream>[a-z]+)/?$", views.get_unread_status_count),
     # authentication
-    re_path(r"^login/?$", views.Login.as_view()),
+    re_path(r"^login/?$", views.Login.as_view(), name="login"),
     re_path(r"^register/?$", views.Register.as_view()),
     re_path(r"^logout/?$", views.Logout.as_view()),
     re_path(r"^password-reset/?$", views.PasswordResetRequest.as_view()),
@@ -224,7 +224,11 @@ urlpatterns = [
     re_path(r"^hide-goal/?$", views.hide_goal, name="hide-goal"),
     # preferences
     re_path(r"^preferences/profile/?$", views.EditUser.as_view(), name="prefs-profile"),
-    re_path(r"^preferences/password/?$", views.ChangePassword.as_view()),
+    re_path(
+        r"^preferences/password/?$",
+        views.ChangePassword.as_view(),
+        name="prefs-password",
+    ),
     re_path(r"^preferences/block/?$", views.Block.as_view()),
     re_path(r"^block/(?P<user_id>\d+)/?$", views.Block.as_view()),
     re_path(r"^unblock/(?P<user_id>\d+)/?$", views.unblock),
@@ -260,7 +264,12 @@ urlpatterns = [
     re_path(r"^boost/(?P<status_id>\d+)/?$", views.Boost.as_view()),
     re_path(r"^unboost/(?P<status_id>\d+)/?$", views.Unboost.as_view()),
     # books
-    re_path(r"%s(.json)?/?$" % book_path, views.Book.as_view()),
+    re_path(r"%s(.json)?/?$" % book_path, views.Book.as_view(), name="book"),
+    re_path(
+        r"%s/(?P<user_statuses>review|comment|quote)/?$" % book_path,
+        views.Book.as_view(),
+        name="book-user-statuses",
+    ),
     re_path(r"%s/edit/?$" % book_path, views.EditBook.as_view()),
     re_path(r"%s/confirm/?$" % book_path, views.ConfirmEditBook.as_view()),
     re_path(r"^create-book/?$", views.EditBook.as_view()),
@@ -277,11 +286,6 @@ urlpatterns = [
     # author
     re_path(r"^author/(?P<author_id>\d+)(.json)?/?$", views.Author.as_view()),
     re_path(r"^author/(?P<author_id>\d+)/edit/?$", views.EditAuthor.as_view()),
-    # tags
-    re_path(r"^tag/(?P<tag_id>.+)\.json/?$", views.Tag.as_view()),
-    re_path(r"^tag/(?P<tag_id>.+)/?$", views.Tag.as_view()),
-    re_path(r"^tag/?$", views.AddTag.as_view()),
-    re_path(r"^untag/?$", views.RemoveTag.as_view()),
     # reading progress
     re_path(r"^edit-readthrough/?$", views.edit_readthrough, name="edit-readthrough"),
     re_path(r"^delete-readthrough/?$", views.delete_readthrough),

@@ -11,10 +11,10 @@ from bookwyrm.activitypub import ActivitySerializerError
 
 # pylint: disable=too-many-public-methods
 class InboxCreate(TestCase):
-    """ readthrough tests """
+    """readthrough tests"""
 
     def setUp(self):
-        """ basic user and book data """
+        """basic user and book data"""
         self.local_user = models.User.objects.create_user(
             "mouse@example.com",
             "mouse@mouse.com",
@@ -53,7 +53,7 @@ class InboxCreate(TestCase):
         models.SiteSettings.objects.create()
 
     def test_create_status(self):
-        """ the "it justs works" mode """
+        """the "it justs works" mode"""
         self.assertEqual(models.Status.objects.count(), 1)
 
         datafile = pathlib.Path(__file__).parent.joinpath(
@@ -84,7 +84,7 @@ class InboxCreate(TestCase):
         self.assertEqual(models.Status.objects.count(), 2)
 
     def test_create_status_remote_note_with_mention(self):
-        """ should only create it under the right circumstances """
+        """should only create it under the right circumstances"""
         self.assertEqual(models.Status.objects.count(), 1)
         self.assertFalse(
             models.Notification.objects.filter(user=self.local_user).exists()
@@ -107,7 +107,7 @@ class InboxCreate(TestCase):
         self.assertEqual(models.Notification.objects.get().notification_type, "MENTION")
 
     def test_create_status_remote_note_with_reply(self):
-        """ should only create it under the right circumstances """
+        """should only create it under the right circumstances"""
         self.assertEqual(models.Status.objects.count(), 1)
         self.assertFalse(models.Notification.objects.filter(user=self.local_user))
 
@@ -127,8 +127,45 @@ class InboxCreate(TestCase):
         self.assertTrue(models.Notification.objects.filter(user=self.local_user))
         self.assertEqual(models.Notification.objects.get().notification_type, "REPLY")
 
+    def test_create_rating(self):
+        """a remote rating activity"""
+        book = models.Edition.objects.create(
+            title="Test Book", remote_id="https://example.com/book/1"
+        )
+        activity = self.create_json
+        activity["object"] = {
+            "id": "https://example.com/user/mouse/reviewrating/12",
+            "type": "Rating",
+            "published": "2021-04-29T21:27:30.014235+00:00",
+            "attributedTo": "https://example.com/user/mouse",
+            "to": ["https://www.w3.org/ns/activitystreams#Public"],
+            "cc": ["https://example.com/user/mouse/followers"],
+            "replies": {
+                "id": "https://example.com/user/mouse/reviewrating/12/replies",
+                "type": "OrderedCollection",
+                "totalItems": 0,
+                "first": "https://example.com/user/mouse/reviewrating/12/replies?page=1",
+                "last": "https://example.com/user/mouse/reviewrating/12/replies?page=1",
+                "@context": "https://www.w3.org/ns/activitystreams",
+            },
+            "inReplyTo": "",
+            "summary": "",
+            "tag": [],
+            "attachment": [],
+            "sensitive": False,
+            "inReplyToBook": "https://example.com/book/1",
+            "rating": 3,
+            "@context": "https://www.w3.org/ns/activitystreams",
+        }
+        with patch("bookwyrm.activitystreams.ActivityStream.add_status") as redis_mock:
+            views.inbox.activity_task(activity)
+            self.assertTrue(redis_mock.called)
+        rating = models.ReviewRating.objects.first()
+        self.assertEqual(rating.book, book)
+        self.assertEqual(rating.rating, 3.0)
+
     def test_create_list(self):
-        """ a new list """
+        """a new list"""
         activity = self.create_json
         activity["object"] = {
             "id": "https://example.com/list/22",
@@ -152,7 +189,7 @@ class InboxCreate(TestCase):
         self.assertEqual(book_list.remote_id, "https://example.com/list/22")
 
     def test_create_unsupported_type(self):
-        """ ignore activities we know we can't handle """
+        """ignore activities we know we can't handle"""
         activity = self.create_json
         activity["object"] = {
             "id": "https://example.com/status/887",
@@ -162,7 +199,7 @@ class InboxCreate(TestCase):
         views.inbox.activity_task(activity)
 
     def test_create_unknown_type(self):
-        """ ignore activities we know we've never heard of """
+        """ignore activities we know we've never heard of"""
         activity = self.create_json
         activity["object"] = {
             "id": "https://example.com/status/887",

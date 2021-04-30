@@ -9,7 +9,7 @@ ConnectorFiles = models.TextChoices("ConnectorFiles", CONNECTORS)
 
 
 class Connector(BookWyrmModel):
-    """ book data source connectors """
+    """book data source connectors"""
 
     identifier = models.CharField(max_length=255, unique=True)
     priority = models.IntegerField(default=2)
@@ -30,16 +30,6 @@ class Connector(BookWyrmModel):
     query_count = models.IntegerField(default=0)
     # when to reset the query count back to 0 (ie, after 1 day)
     query_count_expiry = models.DateTimeField(auto_now_add=True, blank=True)
-
-    class Meta:
-        """ check that there's code to actually use this connector """
-
-        constraints = [
-            models.CheckConstraint(
-                check=models.Q(connector_file__in=ConnectorFiles),
-                name="connector_file_valid",
-            )
-        ]
 
     def __str__(self):
         return "{} ({})".format(

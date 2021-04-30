@@ -7,11 +7,22 @@ from .image import Document
 
 
 @dataclass(init=False)
-class Book(ActivityObject):
-    """ serializes an edition or work, abstract """
+class BookData(ActivityObject):
+    """shared fields for all book data and authors"""
+
+    openlibraryKey: str = None
+    inventaireId: str = None
+    librarythingKey: str = None
+    goodreadsKey: str = None
+    bnfId: str = None
+    lastEditedBy: str = None
+
+
+@dataclass(init=False)
+class Book(BookData):
+    """serializes an edition or work, abstract"""
 
     title: str
-    lastEditedBy: str = None
     sortTitle: str = ""
     subtitle: str = ""
     description: str = ""
@@ -25,17 +36,13 @@ class Book(ActivityObject):
     firstPublishedDate: str = ""
     publishedDate: str = ""
 
-    openlibraryKey: str = ""
-    librarythingKey: str = ""
-    goodreadsKey: str = ""
-
     cover: Document = None
     type: str = "Book"
 
 
 @dataclass(init=False)
 class Edition(Book):
-    """ Edition instance of a book object """
+    """Edition instance of a book object"""
 
     work: str
     isbn10: str = ""
@@ -52,26 +59,24 @@ class Edition(Book):
 
 @dataclass(init=False)
 class Work(Book):
-    """ work instance of a book object """
+    """work instance of a book object"""
 
     lccn: str = ""
-    defaultEdition: str = ""
     editions: List[str] = field(default_factory=lambda: [])
     type: str = "Work"
 
 
 @dataclass(init=False)
-class Author(ActivityObject):
-    """ author of a book """
+class Author(BookData):
+    """author of a book"""
 
     name: str
-    lastEditedBy: str = None
+    isni: str = None
+    viafId: str = None
+    gutenbergId: str = None
     born: str = None
     died: str = None
     aliases: List[str] = field(default_factory=lambda: [])
     bio: str = ""
-    openlibraryKey: str = ""
-    librarythingKey: str = ""
-    goodreadsKey: str = ""
     wikipediaLink: str = ""
     type: str = "Author"

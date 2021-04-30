@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractMinimalConnector(ABC):
-    """ just the bare bones, for other bookwyrm instances """
+    """just the bare bones, for other bookwyrm instances"""
 
     def __init__(self, identifier):
         # load connector settings
@@ -39,12 +39,12 @@ class AbstractMinimalConnector(ABC):
             setattr(self, field, getattr(info, field))
 
     def search(self, query, min_confidence=None):
-        """ free text search """
+        """free text search"""
         params = {}
         if min_confidence:
             params["min_confidence"] = min_confidence
 
-        data = get_data(
+        data = self.get_search_data(
             "%s%s" % (self.search_url, query),
             params=params,
         )
@@ -55,9 +55,9 @@ class AbstractMinimalConnector(ABC):
         return results
 
     def isbn_search(self, query):
-        """ isbn search """
+        """isbn search"""
         params = {}
-        data = get_data(
+        data = self.get_search_data(
             "%s%s" % (self.isbn_search_url, query),
             params=params,
         )
@@ -68,29 +68,33 @@ class AbstractMinimalConnector(ABC):
             results.append(self.format_isbn_search_result(doc))
         return results
 
+    def get_search_data(self, remote_id, **kwargs):  # pylint: disable=no-self-use
+        """this allows connectors to override the default behavior"""
+        return get_data(remote_id, **kwargs)
+
     @abstractmethod
     def get_or_create_book(self, remote_id):
-        """ pull up a book record by whatever means possible """
+        """pull up a book record by whatever means possible"""
 
     @abstractmethod
     def parse_search_data(self, data):
-        """ turn the result json from a search into a list """
+        """turn the result json from a search into a list"""
 
     @abstractmethod
     def format_search_result(self, search_result):
-        """ create a SearchResult obj from json """
+        """create a SearchResult obj from json"""
 
     @abstractmethod
     def parse_isbn_search_data(self, data):
-        """ turn the result json from a search into a list """
+        """turn the result json from a search into a list"""
 
     @abstractmethod
     def format_isbn_search_result(self, search_result):
-        """ create a SearchResult obj from json """
+        """create a SearchResult obj from json"""
 
 
 class AbstractConnector(AbstractMinimalConnector):
-    """ generic book data connector """
+    """generic book data connector"""
 
     def __init__(self, identifier):
         super().__init__(identifier)
@@ -99,25 +103,25 @@ class AbstractConnector(AbstractMinimalConnector):
         self.book_mappings = []
 
     def is_available(self):
-        """ check if you're allowed to use this connector """
+        """check if you're allowed to use this connector"""
         if self.max_query_count is not None:
             if self.connector.query_count >= self.max_query_count:
                 return False
         return True
 
     def get_or_create_book(self, remote_id):
-        """ translate arbitrary json into an Activitypub dataclass """
+        """translate arbitrary json into an Activitypub dataclass"""
         # first, check if we have the origin_id saved
         existing = models.Edition.find_existing_by_remote_id(
             remote_id
         ) or models.Work.find_existing_by_remote_id(remote_id)
         if existing:
-            if hasattr(existing, "get_default_editon"):
-                return existing.get_default_editon()
+            if hasattr(existing, "default_edition"):
+                return existing.default_edition
             return existing
 
         # load the json
-        data = get_data(remote_id)
+        data = self.get_book_data(remote_id)
         mapped_data = dict_from_mappings(data, self.book_mappings)
         if self.is_work_data(data):
             try:
@@ -128,12 +132,12 @@ class AbstractConnector(AbstractMinimalConnector):
                 edition_data = data
             work_data = mapped_data
         else:
+            edition_data = data
             try:
                 work_data = self.get_work_from_edition_data(data)
                 work_data = dict_from_mappings(work_data, self.book_mappings)
             except (KeyError, ConnectorException):
                 work_data = mapped_data
-            edition_data = data
 
         if not work_data or not edition_data:
             raise ConnectorException("Unable to load book data: %s" % remote_id)
@@ -150,18 +154,18 @@ class AbstractConnector(AbstractMinimalConnector):
         load_more_data.delay(self.connector.id, work.id)
         return edition
 
+    def get_book_data(self, remote_id):  # pylint: disable=no-self-use
+        """this allows connectors to override the default behavior"""
+        return get_data(remote_id)
+
     def create_edition_from_data(self, work, edition_data):
-        """ if we already have the work, we're ready """
+        """if we already have the work, we're ready"""
         mapped_data = dict_from_mappings(edition_data, self.book_mappings)
         mapped_data["work"] = work.remote_id
         edition_activity = activitypub.Edition(**mapped_data)
         edition = edition_activity.to_model(model=models.Edition)
         edition.connector = self.connector
         edition.save()
-
-        if not work.default_edition:
-            work.default_edition = edition
-            work.save()
 
         for author in self.get_authors_from_data(edition_data):
             edition.authors.add(author)
@@ -171,12 +175,12 @@ class AbstractConnector(AbstractMinimalConnector):
         return edition
 
     def get_or_create_author(self, remote_id):
-        """ load that author """
+        """load that author"""
         existing = models.Author.find_existing_by_remote_id(remote_id)
         if existing:
             return existing
 
-        data = get_data(remote_id)
+        data = self.get_book_data(remote_id)
 
         mapped_data = dict_from_mappings(data, self.author_mappings)
         try:
@@ -189,23 +193,23 @@ class AbstractConnector(AbstractMinimalConnector):
 
     @abstractmethod
     def is_work_data(self, data):
-        """ differentiate works and editions """
+        """differentiate works and editions"""
 
     @abstractmethod
     def get_edition_from_work_data(self, data):
-        """ every work needs at least one edition """
+        """every work needs at least one edition"""
 
     @abstractmethod
     def get_work_from_edition_data(self, data):
-        """ every edition needs a work """
+        """every edition needs a work"""
 
     @abstractmethod
     def get_authors_from_data(self, data):
-        """ load author data """
+        """load author data"""
 
     @abstractmethod
     def expand_book_data(self, book):
-        """ get more info on a book """
+        """get more info on a book"""
 
 
 def dict_from_mappings(data, mappings):
@@ -213,12 +217,16 @@ def dict_from_mappings(data, mappings):
     the subclass"""
     result = {}
     for mapping in mappings:
+        # sometimes there are multiple mappings for one field, don't
+        # overwrite earlier writes in that case
+        if mapping.local_field in result and result[mapping.local_field]:
+            continue
         result[mapping.local_field] = mapping.get_value(data)
     return result
 
 
 def get_data(url, params=None):
-    """ wrapper for request.get """
+    """wrapper for request.get"""
     # check if the url is blocked
     if models.FederatedServer.is_blocked(url):
         raise ConnectorException(
@@ -250,7 +258,7 @@ def get_data(url, params=None):
 
 
 def get_image(url):
-    """ wrapper for requesting an image """
+    """wrapper for requesting an image"""
     try:
         resp = requests.get(
             url,
@@ -268,11 +276,12 @@ def get_image(url):
 
 @dataclass
 class SearchResult:
-    """ standardized search result object """
+    """standardized search result object"""
 
     title: str
     key: str
     connector: object
+    view_link: str = None
     author: str = None
     year: str = None
     cover: str = None
@@ -284,14 +293,14 @@ class SearchResult:
         )
 
     def json(self):
-        """ serialize a connector for json response """
+        """serialize a connector for json response"""
         serialized = asdict(self)
         del serialized["connector"]
         return serialized
 
 
 class Mapping:
-    """ associate a local database field with a field in an external dataset """
+    """associate a local database field with a field in an external dataset"""
 
     def __init__(self, local_field, remote_field=None, formatter=None):
         noop = lambda x: x
@@ -301,7 +310,7 @@ class Mapping:
         self.formatter = formatter or noop
 
     def get_value(self, data):
-        """ pull a field from incoming json and return the formatted version """
+        """pull a field from incoming json and return the formatted version"""
         value = data.get(self.remote_field)
         if not value:
             return None

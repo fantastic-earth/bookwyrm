@@ -2,14 +2,14 @@
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 
-from bookwyrm import models, settings
+from bookwyrm import models
 
 
 class ReadThrough(TestCase):
-    """ some activitypub oddness ahead """
+    """some activitypub oddness ahead"""
 
     def setUp(self):
-        """ look, a shelf """
+        """look, a shelf"""
         self.user = models.User.objects.create_user(
             "mouse", "mouse@mouse.mouse", "mouseword", local=True, localname="mouse"
         )
@@ -19,15 +19,13 @@ class ReadThrough(TestCase):
         self.edition = models.Edition.objects.create(
             title="Example Edition", parent_work=self.work
         )
-        self.work.default_edition = self.edition
-        self.work.save()
 
         self.readthrough = models.ReadThrough.objects.create(
             user=self.user, book=self.edition
         )
 
     def test_progress_update(self):
-        """ Test progress updates """
+        """Test progress updates"""
         self.readthrough.create_update()  # No-op, no progress yet
         self.readthrough.progress = 10
         self.readthrough.create_update()

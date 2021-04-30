@@ -12,12 +12,9 @@ from .helpers import get_user_from_username
 @login_required
 @require_POST
 def follow(request):
-    """ follow another user, here or abroad """
+    """follow another user, here or abroad"""
     username = request.POST["user"]
-    try:
-        to_follow = get_user_from_username(request.user, username)
-    except models.User.DoesNotExist:
-        return HttpResponseBadRequest()
+    to_follow = get_user_from_username(request.user, username)
 
     try:
         models.UserFollowRequest.objects.create(
@@ -33,12 +30,9 @@ def follow(request):
 @login_required
 @require_POST
 def unfollow(request):
-    """ unfollow a user """
+    """unfollow a user"""
     username = request.POST["user"]
-    try:
-        to_unfollow = get_user_from_username(request.user, username)
-    except models.User.DoesNotExist:
-        return HttpResponseBadRequest()
+    to_unfollow = get_user_from_username(request.user, username)
 
     try:
         models.UserFollows.objects.get(
@@ -61,12 +55,9 @@ def unfollow(request):
 @login_required
 @require_POST
 def accept_follow_request(request):
-    """ a user accepts a follow request """
+    """a user accepts a follow request"""
     username = request.POST["user"]
-    try:
-        requester = get_user_from_username(request.user, username)
-    except models.User.DoesNotExist:
-        return HttpResponseBadRequest()
+    requester = get_user_from_username(request.user, username)
 
     try:
         follow_request = models.UserFollowRequest.objects.get(
@@ -83,12 +74,9 @@ def accept_follow_request(request):
 @login_required
 @require_POST
 def delete_follow_request(request):
-    """ a user rejects a follow request """
+    """a user rejects a follow request"""
     username = request.POST["user"]
-    try:
-        requester = get_user_from_username(request.user, username)
-    except models.User.DoesNotExist:
-        return HttpResponseBadRequest()
+    requester = get_user_from_username(request.user, username)
 
     try:
         follow_request = models.UserFollowRequest.objects.get(

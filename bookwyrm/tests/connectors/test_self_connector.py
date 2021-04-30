@@ -9,10 +9,10 @@ from bookwyrm.settings import DOMAIN
 
 
 class SelfConnector(TestCase):
-    """ just uses local data """
+    """just uses local data"""
 
     def setUp(self):
-        """ creating the connector """
+        """creating the connector"""
         models.Connector.objects.create(
             identifier=DOMAIN,
             name="Local",
@@ -27,7 +27,7 @@ class SelfConnector(TestCase):
         self.connector = Connector(DOMAIN)
 
     def test_format_search_result(self):
-        """ create a SearchResult """
+        """create a SearchResult"""
         author = models.Author.objects.create(name="Anonymous")
         edition = models.Edition.objects.create(
             title="Edition of Example Work",
@@ -42,7 +42,7 @@ class SelfConnector(TestCase):
         self.assertEqual(result.connector, self.connector)
 
     def test_search_rank(self):
-        """ prioritize certain results """
+        """prioritize certain results"""
         author = models.Author.objects.create(name="Anonymous")
         edition = models.Edition.objects.create(
             title="Edition of Example Work",
@@ -78,17 +78,17 @@ class SelfConnector(TestCase):
         self.assertEqual(results[2].title, "Edition of Example Work")
 
     def test_search_multiple_editions(self):
-        """ it should get rid of duplicate editions for the same work """
+        """it should get rid of duplicate editions for the same work"""
         work = models.Work.objects.create(title="Work Title")
         edition_1 = models.Edition.objects.create(
             title="Edition 1 Title", parent_work=work
         )
         edition_2 = models.Edition.objects.create(
-            title="Edition 2 Title", parent_work=work
+            title="Edition 2 Title",
+            parent_work=work,
+            edition_rank=20,  # that's default babey
         )
         edition_3 = models.Edition.objects.create(title="Fish", parent_work=work)
-        work.default_edition = edition_2
-        work.save()
 
         # pick the best edition
         results = self.connector.search("Edition 1 Title")

@@ -2,7 +2,7 @@
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import HttpResponseNotFound
+from django.http import HttpResponseNotFound, Http404
 from django.template.response import TemplateResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -18,10 +18,10 @@ from .helpers import is_api_request, is_bookwyrm_request
 # pylint: disable= no-self-use
 @method_decorator(login_required, name="dispatch")
 class Feed(View):
-    """ activity stream """
+    """activity stream"""
 
     def get(self, request, tab):
-        """ user's homepage with activity feed """
+        """user's homepage with activity feed"""
         if not tab in STREAMS:
             tab = "home"
 
@@ -46,10 +46,10 @@ class Feed(View):
 
 @method_decorator(login_required, name="dispatch")
 class DirectMessage(View):
-    """ dm view """
+    """dm view"""
 
     def get(self, request, username=None):
-        """ like a feed but for dms only """
+        """like a feed but for dms only"""
         # remove fancy subclasses of status, keep just good ol' notes
         queryset = models.Status.objects.filter(
             review__isnull=True,
@@ -62,7 +62,7 @@ class DirectMessage(View):
         if username:
             try:
                 user = get_user_from_username(request.user, username)
-            except models.User.DoesNotExist:
+            except Http404:
                 pass
         if user:
             queryset = queryset.filter(Q(user=user) | Q(mention_users=user))
@@ -85,16 +85,16 @@ class DirectMessage(View):
 
 
 class Status(View):
-    """ get posting """
+    """get posting"""
 
     def get(self, request, username, status_id):
-        """ display a particular status (and replies, etc) """
+        """display a particular status (and replies, etc)"""
         try:
             user = get_user_from_username(request.user, username)
             status = models.Status.objects.select_subclasses().get(
                 id=status_id, deleted=False
             )
-        except (ValueError, models.Status.DoesNotExist, models.User.DoesNotExist):
+        except (ValueError, models.Status.DoesNotExist):
             return HttpResponseNotFound()
 
         # the url should have the poster's username in it
@@ -120,10 +120,10 @@ class Status(View):
 
 
 class Replies(View):
-    """ replies page (a json view of status) """
+    """replies page (a json view of status)"""
 
     def get(self, request, username, status_id):
-        """ ordered collection of replies to a status """
+        """ordered collection of replies to a status"""
         # the html view is the same as Status
         if not is_api_request(request):
             status_view = Status.as_view()
@@ -138,7 +138,7 @@ class Replies(View):
 
 
 def feed_page_data(user):
-    """ info we need for every feed page """
+    """info we need for every feed page"""
     if not user.is_authenticated:
         return {}
 
@@ -151,7 +151,7 @@ def feed_page_data(user):
 
 
 def get_suggested_books(user, max_books=5):
-    """ helper to get a user's recent books """
+    """helper to get a user's recent books"""
     book_count = 0
     preset_shelves = [("reading", max_books), ("read", 2), ("to-read", max_books)]
     suggested_books = []

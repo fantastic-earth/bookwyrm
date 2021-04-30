@@ -3,6 +3,7 @@ import re
 from requests import HTTPError
 from django.core.exceptions import FieldError
 from django.db.models import Count, Max, Q
+from django.http import Http404
 
 from bookwyrm import activitypub, models
 from bookwyrm.connectors import ConnectorException, get_data
@@ -11,21 +12,27 @@ from bookwyrm.utils import regex
 
 
 def get_user_from_username(viewer, username):
-    """ helper function to resolve a localname or a username to a user """
-    # raises DoesNotExist if user is now found
+    """helper function to resolve a localname or a username to a user"""
+    # raises 404 if the user isn't found
     try:
         return models.User.viewer_aware_objects(viewer).get(localname=username)
     except models.User.DoesNotExist:
+        pass
+
+    # if the localname didn't match, try the username
+    try:
         return models.User.viewer_aware_objects(viewer).get(username=username)
+    except models.User.DoesNotExist:
+        raise Http404()
 
 
 def is_api_request(request):
-    """ check whether a request is asking for html or data """
+    """check whether a request is asking for html or data"""
     return "json" in request.headers.get("Accept", "") or request.path[-5:] == ".json"
 
 
 def is_bookwyrm_request(request):
-    """ check if the request is coming from another bookwyrm instance """
+    """check if the request is coming from another bookwyrm instance"""
     user_agent = request.headers.get("User-Agent")
     if user_agent is None or re.search(regex.bookwyrm_user_agent, user_agent) is None:
         return False
@@ -33,7 +40,7 @@ def is_bookwyrm_request(request):
 
 
 def privacy_filter(viewer, queryset, privacy_levels=None, following_only=False):
-    """ filter objects that have "user" and "privacy" fields """
+    """filter objects that have "user" and "privacy" fields"""
     privacy_levels = privacy_levels or ["public", "unlisted", "followers", "direct"]
     # if there'd a deleted field, exclude deleted items
     try:
@@ -84,7 +91,7 @@ def privacy_filter(viewer, queryset, privacy_levels=None, following_only=False):
 
 
 def handle_remote_webfinger(query):
-    """ webfingerin' other servers """
+    """webfingerin' other servers"""
     user = None
 
     # usernames could be @user@domain or user@domain
@@ -120,15 +127,15 @@ def handle_remote_webfinger(query):
 
 
 def get_edition(book_id):
-    """ look up a book in the db and return an edition """
+    """look up a book in the db and return an edition"""
     book = models.Book.objects.select_subclasses().get(id=book_id)
     if isinstance(book, models.Work):
-        book = book.get_default_edition()
+        book = book.default_edition
     return book
 
 
 def handle_reading_status(user, shelf, book, privacy):
-    """ post about a user reading a book """
+    """post about a user reading a book"""
     # tell the world about this cool thing that happened
     try:
         message = {
@@ -145,14 +152,14 @@ def handle_reading_status(user, shelf, book, privacy):
 
 
 def is_blocked(viewer, user):
-    """ is this viewer blocked by the user? """
+    """is this viewer blocked by the user?"""
     if viewer.is_authenticated and viewer in user.blocks.all():
         return True
     return False
 
 
 def get_discover_books():
-    """ list of books for the discover page """
+    """list of books for the discover page"""
     return list(
         set(
             models.Edition.objects.filter(
@@ -169,7 +176,7 @@ def get_discover_books():
 
 
 def get_suggested_users(user):
-    """ bookwyrm users you don't already know """
+    """bookwyrm users you don't already know"""
     return (
         get_annotated_users(
             user,
@@ -184,17 +191,17 @@ def get_suggested_users(user):
 
 
 def get_annotated_users(user, *args, **kwargs):
-    """ Users, annotated with things they have in common """
+    """Users, annotated with things they have in common"""
     return (
         models.User.objects.filter(discoverable=True, is_active=True, *args, **kwargs)
         .exclude(Q(id__in=user.blocks.all()) | Q(blocks=user))
         .annotate(
             mutuals=Count(
-                "following",
+                "followers",
                 filter=Q(
                     ~Q(id=user.id),
                     ~Q(id__in=user.following.all()),
-                    following__in=user.following.all(),
+                    followers__in=user.following.all(),
                 ),
                 distinct=True,
             ),

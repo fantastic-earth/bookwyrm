@@ -6,7 +6,6 @@ from PIL import Image
 from django.contrib.auth.decorators import login_required
 from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
-from django.http import HttpResponseNotFound
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 from django.utils import timezone
@@ -17,23 +16,16 @@ from bookwyrm import forms, models
 from bookwyrm.activitypub import ActivitypubResponse
 from bookwyrm.settings import PAGE_LENGTH
 from .helpers import get_user_from_username, is_api_request
-from .helpers import is_blocked, privacy_filter
+from .helpers import privacy_filter
 
 
 # pylint: disable= no-self-use
 class User(View):
-    """ user profile page """
+    """user profile page"""
 
     def get(self, request, username):
-        """ profile page for a user """
-        try:
-            user = get_user_from_username(request.user, username)
-        except models.User.DoesNotExist:
-            return HttpResponseNotFound()
-
-        # make sure we're not blocked
-        if is_blocked(request.user, user):
-            return HttpResponseNotFound()
+        """profile page for a user"""
+        user = get_user_from_username(request.user, username)
 
         if is_api_request(request):
             # we have a json request
@@ -90,61 +82,49 @@ class User(View):
 
 
 class Followers(View):
-    """ list of followers view """
+    """list of followers view"""
 
     def get(self, request, username):
-        """ list of followers """
-        try:
-            user = get_user_from_username(request.user, username)
-        except models.User.DoesNotExist:
-            return HttpResponseNotFound()
-
-        # make sure we're not blocked
-        if is_blocked(request.user, user):
-            return HttpResponseNotFound()
+        """list of followers"""
+        user = get_user_from_username(request.user, username)
 
         if is_api_request(request):
             return ActivitypubResponse(user.to_followers_activity(**request.GET))
 
+        paginated = Paginator(user.followers.all(), PAGE_LENGTH)
         data = {
             "user": user,
             "is_self": request.user.id == user.id,
-            "followers": user.followers.all(),
+            "follow_list": paginated.page(request.GET.get("page", 1)),
         }
-        return TemplateResponse(request, "user/followers.html", data)
+        return TemplateResponse(request, "user/relationships/followers.html", data)
 
 
 class Following(View):
-    """ list of following view """
+    """list of following view"""
 
     def get(self, request, username):
-        """ list of followers """
-        try:
-            user = get_user_from_username(request.user, username)
-        except models.User.DoesNotExist:
-            return HttpResponseNotFound()
-
-        # make sure we're not blocked
-        if is_blocked(request.user, user):
-            return HttpResponseNotFound()
+        """list of followers"""
+        user = get_user_from_username(request.user, username)
 
         if is_api_request(request):
             return ActivitypubResponse(user.to_following_activity(**request.GET))
 
+        paginated = Paginator(user.following.all(), PAGE_LENGTH)
         data = {
             "user": user,
             "is_self": request.user.id == user.id,
-            "following": user.following.all(),
+            "follow_list": paginated.page(request.GET.get("page", 1)),
         }
-        return TemplateResponse(request, "user/following.html", data)
+        return TemplateResponse(request, "user/relationships/following.html", data)
 
 
 @method_decorator(login_required, name="dispatch")
 class EditUser(View):
-    """ edit user view """
+    """edit user view"""
 
     def get(self, request):
-        """ edit profile page for a user """
+        """edit profile page for a user"""
         data = {
             "form": forms.EditUserForm(instance=request.user),
             "user": request.user,
@@ -152,7 +132,7 @@ class EditUser(View):
         return TemplateResponse(request, "preferences/edit_user.html", data)
 
     def post(self, request):
-        """ les get fancy with images """
+        """les get fancy with images"""
         form = forms.EditUserForm(request.POST, request.FILES, instance=request.user)
         if not form.is_valid():
             data = {"form": form, "user": request.user}
@@ -164,7 +144,7 @@ class EditUser(View):
 
 
 def save_user_form(form):
-    """ special handling for the user form """
+    """special handling for the user form"""
     user = form.save(commit=False)
 
     if "avatar" in form.files:
@@ -181,7 +161,7 @@ def save_user_form(form):
 
 
 def crop_avatar(image):
-    """ reduce the size and make an avatar square """
+    """reduce the size and make an avatar square"""
     target_size = 120
     width, height = image.size
     thumbnail_scale = (
