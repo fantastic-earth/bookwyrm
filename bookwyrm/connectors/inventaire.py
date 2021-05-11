@@ -74,6 +74,14 @@ class Connector(AbstractConnector):
             **{k: data.get(k) for k in ["uri", "image", "labels", "sitelinks"]},
         }
 
+    def search(self, query, min_confidence=None):
+        """overrides default search function with confidence ranking"""
+        results = super().search(query)
+        if min_confidence:
+            # filter the search results after the fact
+            return [r for r in results if r.confidence >= min_confidence]
+        return results
+
     def parse_search_data(self, data):
         return data.get("results")
 
@@ -84,6 +92,9 @@ class Connector(AbstractConnector):
             if images
             else None
         )
+        # a deeply messy translation of inventaire's scores
+        confidence = float(search_result.get("_score", 0.1))
+        confidence = 0.1 if confidence < 150 else 0.999
         return SearchResult(
             title=search_result.get("label"),
             key=self.get_remote_id(search_result.get("uri")),
@@ -92,6 +103,7 @@ class Connector(AbstractConnector):
                 self.base_url, search_result.get("uri")
             ),
             cover=cover,
+            confidence=confidence,
             connector=self,
         )
 
@@ -123,8 +135,10 @@ class Connector(AbstractConnector):
 
     def load_edition_data(self, work_uri):
         """get a list of editions for a work"""
-        url = "{:s}?action=reverse-claims&property=wdt:P629&value={:s}".format(
-            self.books_url, work_uri
+        url = (
+            "{:s}?action=reverse-claims&property=wdt:P629&value={:s}&sort=true".format(
+                self.books_url, work_uri
+            )
         )
         return get_data(url)
 
@@ -137,9 +151,8 @@ class Connector(AbstractConnector):
         return self.get_book_data(self.get_remote_id(uri))
 
     def get_work_from_edition_data(self, data):
-        try:
-            uri = data["claims"]["wdt:P629"]
-        except KeyError:
+        uri = data.get("wdt:P629", [None])[0]
+        if not uri:
             raise ConnectorException("Invalid book data")
         return self.get_book_data(self.get_remote_id(uri))
 
