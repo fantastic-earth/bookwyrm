@@ -4,8 +4,8 @@ with lib;
 
 let 
   pinnedPkgs = import (builtins.fetchTarball {
-    url = "https://github.com/NixOS/nixpkgs/archive/949d727aaf327384530ebf5a23dd138a7f93ce29.tar.gz";
-    sha256 = "086wqa8ycnvpjzd61av4va5wp17d7fyfinxhf0cqq7cimsc8nd31";
+    url = "https://github.com/NixOS/nixpkgs/archive/d67b19f2237477a59503f58b69c5c704f55a0837.tar.gz";
+    sha256 = "sha256:0vn1ldyllfylqd3yv4zcx4zcn64wn09k7ffnkzbfcjs7kpj913rm";
   }) { };
   bookwyrm = (pinnedPkgs.callPackage ./default.nix { });
   cfg = config.services.bookwyrm;
