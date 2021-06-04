@@ -1,8 +1,8 @@
 # Nix module for Bookwyrm
 
-This is a Nix module for Boookwyrm, allowing for deployment of Bookwyrm natively on NixOS, without Docker. It has received only limited testing in production, so use at your own risk.
+This is a Nix module for Boookwyrm, allowing for deployment of Bookwyrm natively on NixOS (>21.05), without Docker. I have been using it to run Bookwyrm in production without any critical issues.
 
-`module.nix` can be used as an import in `/etc/nixos/configuration.nix`.
+`module.nix` can be used as an import in `/etc/nixos/configuration.nix` for your NixOS 21.05 or higher. 
 
 ## How to use
 

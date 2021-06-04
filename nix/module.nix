@@ -3,11 +3,7 @@
 with lib; 
 
 let 
-  pinnedPkgs = import (builtins.fetchTarball {
-    url = "https://github.com/NixOS/nixpkgs/archive/d67b19f2237477a59503f58b69c5c704f55a0837.tar.gz";
-    sha256 = "sha256:0vn1ldyllfylqd3yv4zcx4zcn64wn09k7ffnkzbfcjs7kpj913rm";
-  }) { };
-  bookwyrm = (pinnedPkgs.callPackage ./default.nix { });
+  bookwyrm = (pkgs.callPackage ./default.nix { });
   cfg = config.services.bookwyrm;
   celeryRedisPath = if cfg.celeryRedis.unixSocket != null then
       "redis+socket://${cfg.celeryRedis.unixSocket}?virtual_host=0"
