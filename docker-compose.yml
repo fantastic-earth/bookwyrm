@@ -18,7 +18,8 @@ services:
       - media_volume:/app/images
   certbot:
     image: certbot/certbot:latest
-    command: bash ./certbot.sh
+    command: certonly --webroot --webroot-path=/var/www/certbot --email ${EMAIL} --agree-tos --no-eff-email -d ${DOMAIN} -d www.${DOMAIN}
+    #command: renew --webroot --webroot-path /var/www/certbot
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/logs:/var/log/letsencrypt
@@ -89,10 +90,10 @@ services:
     restart: on-failure
   flower:
     build: .
-    command: flower --port=${FLOWER_PORT} --basic_auth=${FLOWER_USER}:${FLOWER_PASSWORD}
+    command: flower -A celerywyrm
     env_file: .env
-    environment:
-      - CELERY_BROKER_URL=${CELERY_BROKER}
+    volumes:
+      - .:/app
     networks:
       - main
     depends_on:
