@@ -42,8 +42,8 @@ let
 
   loadEnv = (pkgs.writeScript "load-bookwyrm-env" ''
     #!/usr/bin/env bash
-    ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: "export ${n}='${v}'") env)}
-    ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: ''export ${n}="$(cat '${v}')"'')  envSecrets)} 
+    ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: "export ${n}=${lib.escapeShellArg v}") env)}
+    ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: ''export ${n}="$(cat ${lib.escapeShellArg v})"'')  envSecrets)} 
   '');
   bookwyrmManageScript = (pkgs.writeScriptBin "bookwyrm-manage" ''
     #!/usr/bin/env bash 
