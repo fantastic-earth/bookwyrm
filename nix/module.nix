@@ -393,13 +393,13 @@ in
       };
 
       preStart = ''
-        ${concatStringsSep "\n" (mapAttrsToList (n: v: ''export ${n}="$(cat '${v}')"'') envSecrets)}
+        ${concatStringsSep "\n" (mapAttrsToList (n: v: ''export ${n}="$(cat ${escapeShellArg v})"'') envSecrets)}
         ${bookwyrm}/bin/python ${bookwyrm}/manage.py migrate --noinput
         ${bookwyrm}/bin/python ${bookwyrm}/manage.py collectstatic --noinput
       '';
 
       script = ''
-        ${concatStringsSep "\n" (mapAttrsToList (n: v: ''export ${n}="$(cat '${v}')"'') envSecrets)}
+        ${concatStringsSep "\n" (mapAttrsToList (n: v: ''export ${n}="$(cat ${escapeShellArg v})"'') envSecrets)}
         exec ${bookwyrm}/bin/gunicorn bookwyrm.wsgi:application \
           ${concatStringsSep " " (map (elem: "--bind ${elem}") cfg.bindTo)} \
           --umask 0007
@@ -426,7 +426,7 @@ in
       };
 
       script = ''
-        ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: ''export ${n}="$(cat '${v}')"'') envSecrets)}
+        ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: ''export ${n}="$(cat ${escapeShellArg v})"'') envSecrets)}
         exec ${bookwyrm}/bin/celery worker -A=celerywyrm --loglevel=INFO
       '';
 
