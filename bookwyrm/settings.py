@@ -48,7 +48,6 @@ SECRET_KEY = env("SECRET_KEY")
 DEBUG = env.bool("DEBUG", True)
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", ["*"])
-OL_URL = env("OL_URL")
 
 # Application definition
 
@@ -111,10 +110,8 @@ STREAMS = ["home", "local", "federated"]
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-BOOKWYRM_DATABASE_BACKEND = env("BOOKWYRM_DATABASE_BACKEND", "postgres")
-
-BOOKWYRM_DBS = {
-    "postgres": {
+DATABASES = {
+    "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
         "NAME": env("POSTGRES_DB", "fedireads"),
         "USER": env("POSTGRES_USER", "fedireads"),
@@ -124,8 +121,6 @@ BOOKWYRM_DBS = {
     },
 }
 
-DATABASES = {"default": BOOKWYRM_DBS[BOOKWYRM_DATABASE_BACKEND]}
-
 
 LOGIN_URL = "/login/"
 AUTH_USER_MODEL = "bookwyrm.User"
@@ -133,6 +128,7 @@ AUTH_USER_MODEL = "bookwyrm.User"
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 
+# pylint: disable=line-too-long
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
