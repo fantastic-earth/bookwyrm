@@ -34,3 +34,6 @@
 
 #nginx
 nginx/default.conf
+
+#macOS
+**/.DS_Store

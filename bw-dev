@@ -70,7 +70,7 @@ case "$CMD" in
         ;;
     update)
         git pull
-        docker-compose build
+        docker-compose build --no-cache
         docker-compose exec web python manage.py migrate
         docker-compose exec web python manage.py collectstatic --no-input
         docker-compose restart
@@ -78,7 +78,10 @@ case "$CMD" in
     populate_streams)
         runweb python manage.py populate_streams
         ;;
+    generate_preview_images)
+        runweb python manage.py generate_preview_images $@
+        ;;
     *)
-        echo "Unrecognised command. Try: build, up, initdb, migrate, bash, shell, dbshell, restart_celery, update, populate_feeds"
+        echo "Unrecognised command. Try: build, up, initdb, migrate, bash, shell, dbshell, restart_celery, update, populate_streams, generate_preview_images"
         ;;
 esac
