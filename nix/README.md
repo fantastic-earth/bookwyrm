@@ -1,12 +1,11 @@
 # Nix module for Bookwyrm
 
-This is a Nix module for Boookwyrm, allowing for deployment of Bookwyrm natively on NixOS (>21.05), without Docker. I have been using it to run Bookwyrm in production without any critical issues.
+This is a Nix module for Boookwyrm, allowing for deployment of Bookwyrm natively on NixOS without Docker. It has been used in production at <https://books.underscore.world> without critical issues, but is also rough around the edges. 
 
-`module.nix` can be used as an import in `/etc/nixos/configuration.nix` for your NixOS 21.05 or higher. 
 
 ## How to use
 
-### Importing the module
+### Non-flake use
 [Niv](https://github.com/nmattia/niv) can be used to include the module in a NixOS configuration. In `/etc/nixos` (or, if permissions are a problem, somewhere in your home directory before copying to `/etc/nixos` later) do:
 
 ```shellsession
@@ -32,6 +31,9 @@ Now, the module can be imported as such:
     # …
 }
 ```
+
+### Flake use 
+If you are using Nix with flakes, you can add `github:DeeUnderscore/bookwyrm/nix` as an input. Bookwyrm is available under the `defaultPackage` output, and the module is available under the `nixosModule` output. 
 
 ### Configuring
 Bookwyrm can be enabled with a configuration similar to this: 
@@ -121,6 +123,10 @@ Additionally, you may have to use a Postgresql superuser to enable some extensio
 bookwyrm=# CREATE EXTENSION IF NOT EXISTS citext;
 bookwyrm=# CREATE EXTENSION IF NOT EXISTS pg_trgm;
 ```
+
+## Caveats
+* The non-flake module currently pins `nixos-unstable`. One of the dependencies, `colorthief`, is not available in `nixos-21.05`. `nixos-unstable` is also the default Nixpkgs input to the flake.
+* The flake sets `allowUnfree` to `true`. While in non-flake mode Nix will refuse to build Bookwyrm if non-free software is disallowed, the flake version will do so regardless. This is a workaround for the difficulties inherent in enabling non-free with flakes. 
 
 ## Running
 
