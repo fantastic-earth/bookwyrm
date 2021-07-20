@@ -32,7 +32,9 @@ function initdb {
 }
 
 CMD=$1
-shift
+if [ -n "$CMD" ]; then
+    shift
+fi
 
 # show commands as they're executed
 set -x
@@ -81,7 +83,14 @@ case "$CMD" in
     generate_preview_images)
         runweb python manage.py generate_preview_images $@
         ;;
+    runweb)
+        runweb "$@"
+        ;;
+    rundb)
+        rundb "$@"
+        ;;
     *)
+        set +x # No need to echo echo
         echo "Unrecognised command. Try: build, up, initdb, migrate, bash, shell, dbshell, restart_celery, update, populate_streams, generate_preview_images"
         ;;
 esac
