@@ -1,16 +1,6 @@
 """ Re-create user streams """
 from django.core.management.base import BaseCommand
-import redis
-
-from bookwyrm import activitystreams, models, settings
-
-r = redis.Redis(
-    host=settings.REDIS_ACTIVITY_HOST,
-    port=settings.REDIS_ACTIVITY_PORT,
-    password=settings.REDIS_ACTIVITY_PASSWORD,
-    unix_socket_path=settings.REDIS_ACTIVITY_SOCKET,
-    db=0,
-)
+from bookwyrm import activitystreams, models
 
 
 def populate_streams():
