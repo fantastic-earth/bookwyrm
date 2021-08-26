@@ -4,7 +4,7 @@ from django.db.models import signals, Q
 
 from bookwyrm import models
 from bookwyrm.redis_store import RedisStore, r
-from bookwyrm.settings import STREAMS
+from bookwyrm.tasks import app
 from bookwyrm.views.helpers import privacy_filter
 
 
@@ -23,14 +23,15 @@ class ActivityStream(RedisStore):
         """statuses are sorted by date published"""
         return obj.published_date.timestamp()
 
-    def add_status(self, status):
+    def add_status(self, status, increment_unread=False):
         """add a status to users' feeds"""
         # the pipeline contains all the add-to-stream activities
         pipeline = self.add_object_to_related_stores(status, execute=False)
 
-        for user in self.get_audience(status):
-            # add to the unread status count
-            pipeline.incr(self.unread_id(user))
+        if increment_unread:
+            for user in self.get_audience(status):
+                # add to the unread status count
+                pipeline.incr(self.unread_id(user))
 
         # and go!
         pipeline.execute()
@@ -56,7 +57,13 @@ class ActivityStream(RedisStore):
         return (
             models.Status.objects.select_subclasses()
             .filter(id__in=statuses)
-            .select_related("user", "reply_parent")
+            .select_related(
+                "user",
+                "reply_parent",
+                "comment__book",
+                "review__book",
+                "quotation__book",
+            )
             .prefetch_related("mention_books", "mention_users")
             .order_by("-published_date")
         )
@@ -235,15 +242,10 @@ class BooksStream(ActivityStream):
 
 
 # determine which streams are enabled in settings.py
-available_streams = [s["key"] for s in STREAMS]
 streams = {
-    k: v
-    for (k, v) in {
-        "home": HomeStream(),
-        "local": LocalStream(),
-        "books": BooksStream(),
-    }.items()
-    if k in available_streams
+    "home": HomeStream(),
+    "local": LocalStream(),
+    "books": BooksStream(),
 }
 
 
@@ -260,11 +262,8 @@ def add_status_on_create(sender, instance, created, *args, **kwargs):
             stream.remove_object_from_related_stores(instance)
         return
 
-    if not created:
-        return
-
     for stream in streams.values():
-        stream.add_status(instance)
+        stream.add_status(instance, increment_unread=created)
 
     if sender != models.Boost:
         return
@@ -275,9 +274,10 @@ def add_status_on_create(sender, instance, created, *args, **kwargs):
         created_date__lt=instance.created_date,
     )
     for stream in streams.values():
-        stream.remove_object_from_related_stores(boosted)
+        audience = stream.get_stores_for_object(instance)
+        stream.remove_object_from_related_stores(boosted, stores=audience)
         for status in old_versions:
-            stream.remove_object_from_related_stores(status)
+            stream.remove_object_from_related_stores(status, stores=audience)
 
 
 @receiver(signals.post_delete, sender=models.Boost)
@@ -358,25 +358,47 @@ def add_statuses_on_shelve(sender, instance, *args, **kwargs):
     """update books stream when user shelves a book"""
     if not instance.user.local:
         return
-    # check if the book is already on the user's shelves
-    if models.ShelfBook.objects.filter(
-        user=instance.user, book__in=instance.book.parent_work.editions.all()
-    ).exists():
+    book = None
+    if hasattr(instance, "book"):
+        book = instance.book
+    elif instance.mention_books.exists():
+        book = instance.mention_books.first()
+    if not book:
         return
 
-    BooksStream().add_book_statuses(instance.user, instance.book)
+    # check if the book is already on the user's shelves
+    editions = book.parent_work.editions.all()
+    if models.ShelfBook.objects.filter(user=instance.user, book__in=editions).exists():
+        return
+
+    BooksStream().add_book_statuses(instance.user, book)
 
 
 @receiver(signals.post_delete, sender=models.ShelfBook)
 # pylint: disable=unused-argument
-def remove_statuses_on_shelve(sender, instance, *args, **kwargs):
+def remove_statuses_on_unshelve(sender, instance, *args, **kwargs):
     """update books stream when user unshelves a book"""
     if not instance.user.local:
         return
+
+    book = None
+    if hasattr(instance, "book"):
+        book = instance.book
+    elif instance.mention_books.exists():
+        book = instance.mention_books.first()
+    if not book:
+        return
     # check if the book is actually unshelved, not just moved
-    if models.ShelfBook.objects.filter(
-        user=instance.user, book__in=instance.book.parent_work.editions.all()
-    ).exists():
+    editions = book.parent_work.editions.all()
+    if models.ShelfBook.objects.filter(user=instance.user, book__in=editions).exists():
         return
 
     BooksStream().remove_book_statuses(instance.user, instance.book)
+
+
+@app.task
+def populate_stream_task(stream, user_id):
+    """background task for populating an empty activitystream"""
+    user = models.User.objects.get(id=user_id)
+    stream = streams[stream]
+    stream.populate_streams(user)
