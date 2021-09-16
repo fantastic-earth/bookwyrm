@@ -4,10 +4,6 @@ with lib;
 
 let 
   cfg = config.services.bookwyrm;
-  celeryRedisPath = if cfg.celeryRedis.unixSocket != null then
-      "redis+socket://${cfg.celeryRedis.unixSocket}?virtual_host=0"
-    else
-      "redis://${cfg.celeryRedis.host}:${toString cfg.celeryRedis.port}/0";
   env = {
     DEBUG = if cfg.debug then "true" else "false";
     DOMAIN = cfg.domain;
@@ -22,8 +18,9 @@ let
     REDIS_ACTIVITY_HOST = cfg.activityRedis.host;
     REDIS_ACTIVITY_PORT = (toString cfg.activityRedis.port);
     REDIS_ACTIVITY_SOCKET = (if cfg.activityRedis.unixSocket != null then cfg.activityRedis.unixSocket else "");
-    CELERY_BROKER  = celeryRedisPath;
-    CELERY_RESULT_BACKEND = celeryRedisPath;
+    REDIS_BROKER_HOST  = cfg.celeryRedis.host;
+    REDIS_BROKER_PORT = (toString cfg.celeryRedis.port);
+    REDIS_BROKER_SOCKET = (if cfg.celeryRedis.unixSocket != null then cfg.celeryRedis.unixSocket else "");
     EMAIL_HOST = cfg.email.host;
     EMAIL_PORT = (toString cfg.email.port);
     EMAIL_HOST_USER = cfg.email.user;
@@ -186,6 +183,8 @@ in
       };
     };
 
+
+    # TODO: Perhaps support passwords for the redises 
     activityRedis = {
       createLocally = mkOption {
         type = types.bool;
@@ -426,7 +425,7 @@ in
 
       script = ''
         ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: ''export ${n}="$(cat ${escapeShellArg v})"'') envSecrets)}
-        exec ${bookwyrm}/bin/celery worker -A=celerywyrm --loglevel=INFO
+        exec ${bookwyrm}/bin/celery worker -A celerywyrm --loglevel=INFO -Q high_priority,medium_priority,low_priority
       '';
 
     };
@@ -443,9 +442,7 @@ in
       ];
       wantedBy = [ "bookwyrm.target" ];
       partOf = [ "bookwyrm.target" ];
-      environment = {
-        CELERY_BROKER_URL = env.CELERY_BROKER;  
-      };
+      environment = env;
 
       serviceConfig = {
         Type = "simple";
@@ -455,7 +452,8 @@ in
       };
 
       script = ''
-        ${bookwyrm}/bin/flower \
+        ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: ''export ${n}="$(cat ${escapeShellArg v})"'') envSecrets)}
+        exec ${bookwyrm}/bin/flower -A celerywyrm \
           ${lib.concatStringsSep " " cfg.flowerArgs}
       '';
 
