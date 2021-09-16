@@ -65,6 +65,9 @@ urlpatterns = [
         r"^password-reset/(?P<code>[A-Za-z0-9]+)/?$", views.PasswordReset.as_view()
     ),
     # admin
+    re_path(
+        r"^settings/dashboard/?$", views.Dashboard.as_view(), name="settings-dashboard"
+    ),
     re_path(r"^settings/site-settings/?$", views.Site.as_view(), name="settings-site"),
     re_path(
         r"^settings/announcements/?$",
@@ -83,7 +86,7 @@ urlpatterns = [
     ),
     re_path(
         r"^settings/email-preview/?$",
-        views.site.email_preview,
+        views.admin.site.email_preview,
         name="settings-email-preview",
     ),
     re_path(
@@ -95,7 +98,7 @@ urlpatterns = [
         name="settings-user",
     ),
     re_path(
-        r"^settings/federation/?$",
+        r"^settings/federation/(?P<status>(federated|blocked))?/?$",
         views.Federation.as_view(),
         name="settings-federation",
     ),
@@ -106,12 +109,12 @@ urlpatterns = [
     ),
     re_path(
         r"^settings/federation/(?P<server>\d+)/block?$",
-        views.federation.block_server,
+        views.block_server,
         name="settings-federated-server-block",
     ),
     re_path(
         r"^settings/federation/(?P<server>\d+)/unblock?$",
-        views.federation.unblock_server,
+        views.unblock_server,
         name="settings-federated-server-unblock",
     ),
     re_path(
@@ -141,6 +144,16 @@ urlpatterns = [
         r"^invite-request/?$", views.InviteRequest.as_view(), name="invite-request"
     ),
     re_path(r"^invite/(?P<code>[A-Za-z0-9]+)/?$", views.Invite.as_view()),
+    re_path(
+        r"^settings/email-blocklist/?$",
+        views.EmailBlocklist.as_view(),
+        name="settings-email-blocks",
+    ),
+    re_path(
+        r"^settings/email-blocks/(?P<domain_id>\d+)/delete/?$",
+        views.EmailBlocklist.as_view(),
+        name="settings-email-blocks-delete",
+    ),
     # moderation
     re_path(r"^settings/reports/?$", views.Reports.as_view(), name="settings-reports"),
     re_path(
@@ -152,6 +165,16 @@ urlpatterns = [
         r"^settings/reports/(?P<user_id>\d+)/suspend/?$",
         views.suspend_user,
         name="settings-report-suspend",
+    ),
+    re_path(
+        r"^settings/reports/(?P<user_id>\d+)/unsuspend/?$",
+        views.unsuspend_user,
+        name="settings-report-unsuspend",
+    ),
+    re_path(
+        r"^settings/reports/(?P<user_id>\d+)/delete/?$",
+        views.moderator_delete_user,
+        name="settings-delete-user",
     ),
     re_path(
         r"^settings/reports/(?P<report_id>\d+)/resolve/?$",
@@ -215,11 +238,13 @@ urlpatterns = [
         views.Following.as_view(),
         name="user-following",
     ),
+    re_path(r"^hide-suggestions/?$", views.hide_suggestions, name="hide-suggestions"),
     # lists
     re_path(r"%s/lists/?$" % USER_PATH, views.UserLists.as_view(), name="user-lists"),
     re_path(r"^list/?$", views.Lists.as_view(), name="lists"),
     re_path(r"^list/saved/?$", views.SavedLists.as_view(), name="saved-lists"),
     re_path(r"^list/(?P<list_id>\d+)(.json)?/?$", views.List.as_view(), name="list"),
+    re_path(r"^list/delete/(?P<list_id>\d+)/?$", views.delete_list, name="delete-list"),
     re_path(r"^list/add-book/?$", views.list.add_book, name="list-add-book"),
     re_path(
         r"^list/(?P<list_id>\d+)/remove/?$",
