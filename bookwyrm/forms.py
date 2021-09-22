@@ -260,10 +260,7 @@ class CreateInviteForm(CustomForm):
                 ]
             ),
             "use_limit": widgets.Select(
-                choices=[
-                    (i, _("%(count)d uses" % {"count": i}))
-                    for i in [1, 5, 10, 25, 50, 100]
-                ]
+                choices=[(i, _(f"{i} uses")) for i in [1, 5, 10, 25, 50, 100]]
                 + [(None, _("Unlimited"))]
             ),
         }
@@ -309,6 +306,12 @@ class EmailBlocklistForm(CustomForm):
     class Meta:
         model = models.EmailBlocklist
         fields = ["domain"]
+
+
+class IPBlocklistForm(CustomForm):
+    class Meta:
+        model = models.IPBlocklist
+        fields = ["address"]
 
 
 class ServerForm(CustomForm):
