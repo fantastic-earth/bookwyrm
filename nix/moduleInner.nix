@@ -393,7 +393,7 @@ in
       preStart = ''
         ${concatStringsSep "\n" (mapAttrsToList (n: v: ''export ${n}="$(cat ${escapeShellArg v})"'') envSecrets)}
         ${bookwyrm}/bin/python ${bookwyrm}/manage.py migrate --noinput
-        ${bookwyrm}/bin/python ${bookwyrm}/manage.py collectstatic --noinput
+        ${bookwyrm}/bin/python ${bookwyrm}/manage.py collectstatic --noinput --clear
       '';
 
       script = ''
