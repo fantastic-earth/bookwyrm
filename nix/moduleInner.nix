@@ -13,7 +13,7 @@ let
     STATIC_ROOT = (builtins.toPath cfg.stateDir) + "/static";
     POSTGRES_HOST = cfg.database.host;
     POSTGRES_USER = cfg.database.user;
-    POSTGRES_PORT = (toString cfg.database.port);
+    PGPORT = (toString cfg.database.port);
     POSTGRES_DB = cfg.database.database;
     REDIS_ACTIVITY_HOST = cfg.activityRedis.host;
     REDIS_ACTIVITY_PORT = (toString cfg.activityRedis.port);
