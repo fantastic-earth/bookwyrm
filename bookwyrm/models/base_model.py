@@ -1,8 +1,12 @@
 """ base model with default fields """
 import base64
 from Crypto import Random
+
+from django.core.exceptions import PermissionDenied
 from django.db import models
+from django.db.models import Q
 from django.dispatch import receiver
+from django.http import Http404
 from django.utils.translation import gettext_lazy as _
 
 from bookwyrm.settings import DOMAIN
@@ -48,26 +52,26 @@ class BookWyrmModel(models.Model):
         """how to link to this object in the local app"""
         return self.get_remote_id().replace(f"https://{DOMAIN}", "")
 
-    def visible_to_user(self, viewer):
+    def raise_visible_to_user(self, viewer):
         """is a user authorized to view an object?"""
         # make sure this is an object with privacy owned by a user
         if not hasattr(self, "user") or not hasattr(self, "privacy"):
-            return None
+            return
 
         # viewer can't see it if the object's owner blocked them
         if viewer in self.user.blocks.all():
-            return False
+            raise Http404()
 
         # you can see your own posts and any public or unlisted posts
         if viewer == self.user or self.privacy in ["public", "unlisted"]:
-            return True
+            return
 
         # you can see the followers only posts of people you follow
         if (
             self.privacy == "followers"
             and self.user.followers.filter(id=viewer.id).first()
         ):
-            return True
+            return
 
         # you can see dms you are tagged in
         if hasattr(self, "mention_users"):
@@ -75,8 +79,78 @@ class BookWyrmModel(models.Model):
                 self.privacy == "direct"
                 and self.mention_users.filter(id=viewer.id).first()
             ):
-                return True
-        return False
+                return
+        raise Http404()
+
+    def raise_not_editable(self, viewer):
+        """does this user have permission to edit this object? liable to be overwritten
+        by models that inherit this base model class"""
+        if not hasattr(self, "user"):
+            return
+
+        # generally moderators shouldn't be able to edit other people's stuff
+        if self.user == viewer:
+            return
+
+        raise PermissionDenied()
+
+    def raise_not_deletable(self, viewer):
+        """does this user have permission to delete this object? liable to be
+        overwritten by models that inherit this base model class"""
+        if not hasattr(self, "user"):
+            return
+
+        # but generally moderators can delete other people's stuff
+        if self.user == viewer or viewer.has_perm("moderate_post"):
+            return
+
+        raise PermissionDenied()
+
+    @classmethod
+    def privacy_filter(cls, viewer, privacy_levels=None):
+        """filter objects that have "user" and "privacy" fields"""
+        queryset = cls.objects
+        if hasattr(queryset, "select_subclasses"):
+            queryset = queryset.select_subclasses()
+
+        privacy_levels = privacy_levels or ["public", "unlisted", "followers", "direct"]
+        # you can't see followers only or direct messages if you're not logged in
+        if viewer.is_anonymous:
+            privacy_levels = [
+                p for p in privacy_levels if not p in ["followers", "direct"]
+            ]
+        else:
+            # exclude blocks from both directions
+            queryset = queryset.exclude(
+                Q(user__blocked_by=viewer) | Q(user__blocks=viewer)
+            )
+
+        # filter to only provided privacy levels
+        queryset = queryset.filter(privacy__in=privacy_levels)
+
+        if "followers" in privacy_levels:
+            queryset = cls.followers_filter(queryset, viewer)
+
+        # exclude direct messages not intended for the user
+        if "direct" in privacy_levels:
+            queryset = cls.direct_filter(queryset, viewer)
+
+        return queryset
+
+    @classmethod
+    def followers_filter(cls, queryset, viewer):
+        """Override-able filter for "followers" privacy level"""
+        return queryset.exclude(
+            ~Q(  # user isn't following and it isn't their own status
+                Q(user__followers=viewer) | Q(user=viewer)
+            ),
+            privacy="followers",  # and the status is followers only
+        )
+
+    @classmethod
+    def direct_filter(cls, queryset, viewer):
+        """Override-able filter for "direct" privacy level"""
+        return queryset.exclude(~Q(user=viewer), privacy="direct")
 
 
 @receiver(models.signals.post_save)

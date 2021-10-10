@@ -1,11 +1,15 @@
 """ helper functions used in various views """
 import re
-from requests import HTTPError
-from django.core.exceptions import FieldError
-from django.db.models import Q
-from django.http import Http404
+from datetime import datetime
+import dateutil.parser
+import dateutil.tz
+from dateutil.parser import ParserError
 
-from bookwyrm import activitypub, models
+from requests import HTTPError
+from django.http import Http404
+from django.utils import translation
+
+from bookwyrm import activitypub, models, settings
 from bookwyrm.connectors import ConnectorException, get_data
 from bookwyrm.status import create_generated_note
 from bookwyrm.utils import regex
@@ -32,7 +36,9 @@ def get_user_from_username(viewer, username):
 
 def is_api_request(request):
     """check whether a request is asking for html or data"""
-    return "json" in request.headers.get("Accept", "") or request.path[-5:] == ".json"
+    return "json" in request.headers.get("Accept", "") or re.match(
+        r".*\.json/?$", request.path
+    )
 
 
 def is_bookwyrm_request(request):
@@ -41,57 +47,6 @@ def is_bookwyrm_request(request):
     if user_agent is None or re.search(regex.BOOKWYRM_USER_AGENT, user_agent) is None:
         return False
     return True
-
-
-def privacy_filter(viewer, queryset, privacy_levels=None, following_only=False):
-    """filter objects that have "user" and "privacy" fields"""
-    privacy_levels = privacy_levels or ["public", "unlisted", "followers", "direct"]
-    # if there'd a deleted field, exclude deleted items
-    try:
-        queryset = queryset.filter(deleted=False)
-    except FieldError:
-        pass
-
-    # exclude blocks from both directions
-    if not viewer.is_anonymous:
-        blocked = models.User.objects.filter(id__in=viewer.blocks.all()).all()
-        queryset = queryset.exclude(Q(user__in=blocked) | Q(user__blocks=viewer))
-
-    # you can't see followers only or direct messages if you're not logged in
-    if viewer.is_anonymous:
-        privacy_levels = [p for p in privacy_levels if not p in ["followers", "direct"]]
-
-    # filter to only privided privacy levels
-    queryset = queryset.filter(privacy__in=privacy_levels)
-
-    # only include statuses the user follows
-    if following_only:
-        queryset = queryset.exclude(
-            ~Q(  # remove everythign except
-                Q(user__in=viewer.following.all())
-                | Q(user=viewer)  # user following
-                | Q(mention_users=viewer)  # is self  # mentions user
-            ),
-        )
-    # exclude followers-only statuses the user doesn't follow
-    elif "followers" in privacy_levels:
-        queryset = queryset.exclude(
-            ~Q(  # user isn't following and it isn't their own status
-                Q(user__followers=viewer) | Q(user=viewer)
-            ),
-            privacy="followers",  # and the status is followers only
-        )
-
-    # exclude direct messages not intended for the user
-    if "direct" in privacy_levels:
-        try:
-            queryset = queryset.exclude(
-                ~Q(Q(user=viewer) | Q(mention_users=viewer)), privacy="direct"
-            )
-        except FieldError:
-            queryset = queryset.exclude(~Q(user=viewer), privacy="direct")
-
-    return queryset
 
 
 def handle_remote_webfinger(query):
@@ -178,3 +133,23 @@ def get_landing_books():
             .order_by("-review__published_date")[:6]
         )
     )
+
+
+def load_date_in_user_tz_as_utc(date_str: str, user: models.User) -> datetime:
+    """ensures that data is stored consistently in the UTC timezone"""
+    if not date_str:
+        return None
+    user_tz = dateutil.tz.gettz(user.preferred_timezone)
+    date = dateutil.parser.parse(date_str, ignoretz=True)
+    try:
+        return date.replace(tzinfo=user_tz).astimezone(dateutil.tz.UTC)
+    except ParserError:
+        return None
+
+
+def set_language(user, response):
+    """Updates a user's language"""
+    if user.preferred_language:
+        translation.activate(user.preferred_language)
+    response.set_cookie(settings.LANGUAGE_COOKIE_NAME, user.preferred_language)
+    return response

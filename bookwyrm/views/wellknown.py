@@ -3,12 +3,13 @@
 from dateutil.relativedelta import relativedelta
 from django.http import HttpResponseNotFound
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
 from django.utils import timezone
 from django.views.decorators.http import require_GET
 
 from bookwyrm import models
-from bookwyrm.settings import DOMAIN, VERSION, MEDIA_FULL_URL
+from bookwyrm.settings import DOMAIN, VERSION, MEDIA_FULL_URL, STATIC_FULL_URL
 
 
 @require_GET
@@ -19,10 +20,7 @@ def webfinger(request):
         return HttpResponseNotFound()
 
     username = resource.replace("acct:", "")
-    try:
-        user = models.User.objects.get(username__iexact=username)
-    except models.User.DoesNotExist:
-        return HttpResponseNotFound("No account found")
+    user = get_object_or_404(models.User, username__iexact=username)
 
     return JsonResponse(
         {
@@ -95,8 +93,7 @@ def instance_info(_):
     status_count = models.Status.objects.filter(user__local=True, deleted=False).count()
 
     site = models.SiteSettings.get()
-    logo_path = site.logo or "images/logo.png"
-    logo = f"{MEDIA_FULL_URL}{logo_path}"
+    logo = get_image_url(site.logo, "logo.png")
     return JsonResponse(
         {
             "uri": DOMAIN,
@@ -130,3 +127,20 @@ def peers(_):
 def host_meta(request):
     """meta of the host"""
     return TemplateResponse(request, "host_meta.xml", {"DOMAIN": DOMAIN})
+
+
+@require_GET
+def opensearch(request):
+    """Open Search xml spec"""
+    site = models.SiteSettings.get()
+    image = get_image_url(site.favicon, "favicon.png")
+    return TemplateResponse(
+        request, "opensearch.xml", {"image": image, "DOMAIN": DOMAIN}
+    )
+
+
+def get_image_url(obj, fallback):
+    """helper for loading the full path to an image"""
+    if obj:
+        return f"{MEDIA_FULL_URL}{obj}"
+    return f"{STATIC_FULL_URL}images/{fallback}"

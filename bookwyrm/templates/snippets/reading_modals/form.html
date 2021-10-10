@@ -5,7 +5,9 @@
 
 {% block content_label %}
 {% trans "Comment:" %}
+{% if optional %}
 <span class="help mt-0 has-text-weight-normal">{% trans "(Optional)" %}</span>
+{% endif %}
 {% endblock %}
 
 {% block initial_fields %}
@@ -13,3 +15,5 @@
 <input type="hidden" name="mention_books" value="{{ book.id }}">
 <input type="hidden" name="book" value="{{ book.id }}">
 {% endblock %}
+
+{% block form_close %}{% endblock %}
