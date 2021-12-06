@@ -11,6 +11,16 @@ let
     src = bookwyrmSource;
     python = python39;
 
+    # typing-extensions needs flit
+    # see https://github.com/nix-community/poetry2nix/issues/218
+    overrides = poetry2nix.overrides.withDefaults (final: prev: {
+      typing-extensions = prev.typing-extensions.overridePythonAttrs (
+        prevAttrs: {
+          buildInputs = (prevAttrs.buildInputs or []) ++ [ final.flit-core ];
+        }
+      );
+    });
+
     postInstall = ''
       mkdir -p $out/
       
