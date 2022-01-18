@@ -425,7 +425,7 @@ in
 
       script = ''
         ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: ''export ${n}="$(cat ${escapeShellArg v})"'') envSecrets)}
-        exec ${bookwyrm}/bin/celery worker -A celerywyrm --loglevel=INFO -Q high_priority,medium_priority,low_priority
+        exec ${bookwyrm}/bin/celery -A celerywyrm worker --loglevel=INFO -Q high_priority,medium_priority,low_priority
       '';
 
     };
@@ -453,7 +453,7 @@ in
 
       script = ''
         ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: ''export ${n}="$(cat ${escapeShellArg v})"'') envSecrets)}
-        exec ${bookwyrm}/bin/flower -A celerywyrm \
+        exec ${bookwyrm}/bin/celery -A celerywyrm flower \
           ${lib.concatStringsSep " " cfg.flowerArgs}
       '';
 
