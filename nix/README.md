@@ -49,7 +49,7 @@ If you are configuring NixOS with flakes, you can add `github:DeeUnderscore/book
       specialArgs = { inherit bookwyrm; };
       # …
     };
-  }
+  };
 }
 ```
 
