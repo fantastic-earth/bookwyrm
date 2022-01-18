@@ -33,7 +33,38 @@ Now, the module can be imported as such:
 ```
 
 ### Flake use 
-If you are using Nix with flakes, you can add `github:DeeUnderscore/bookwyrm/nix` as an input. Bookwyrm is available under the `defaultPackage` output, and the module is available under the `nixosModule` output. 
+If you are configuring NixOS with flakes, you can add `github:DeeUnderscore/bookwyrm/nix` as an input. Bookwyrm is available under the `defaultPackage` output, and the module is available under the `nixosModule` output. Example configuration:
+
+```nix
+# flake.nix
+{
+  inputs = {
+    bookwyrm.url = "github:DeeUnderscore/bookwyrm/nix";
+  };
+  outputs = {self, nixpkgs, bookwyrm, ...}:
+  {
+    nixosConfigurations.example = nixpkgs.lib.nixosSystem {
+      # …
+      modules = [ ./configuration.nix ];
+      specialArgs = { inherit bookwyrm; };
+      # …
+    };
+  }
+}
+```
+
+```nix
+# configuration.nix
+# configuration.nix
+{ config, pkgs, bookwyrm, ... }:
+{
+  imports = [ 
+    bookwyrm.nixosModule
+  ];
+
+  # …
+}
+```
 
 ### Configuring
 Bookwyrm can be enabled with a configuration similar to this: 
@@ -67,13 +98,13 @@ Bookwyrm can be enabled with a configuration similar to this:
   };
 ```
 
-For detailed list options see the `module.nix` source file (there is currently no generated documentation for them). If working with a secret vault (like [sops-nix](https://github.com/Mic92/sops-nix)), secrets can be supplied as file paths instead (for example `services.bookwyrm.secretKeyFile`), per the usual nixpkgs convention. 
+For detailed list options see the `module.nix` source file (there is currently no generated documentation for them). If working with a secret vault (like [sops-nix](https://github.com/Mic92/sops-nix)), secrets can be supplied as file paths instead (for example `services.bookwyrm.secretKeyFile`), per the usual Nixpkgs convention. 
 
-`services.bookwyrm.activityRedis.createLocally` and `services.bookwyrm.celeryRedis.createLocally` will start up Redis locally, and connect to it over TCP (the default for Redis on NixOS 20.09 does not provide a unix socket). If Redis is configured to listen on a socket, `services.bookwyrm.activityRedis.unixSocket` and `services.bookwyrm.celeryRedis.unixSocket` can be used instead. 
+`services.bookwyrm.activityRedis.createLocally` and `services.bookwyrm.celeryRedis.createLocally` will start up Redis locally, and connect to it over TCP (the default for Redis on NixOS 21.11 does not provide a unix socket). If Redis is configured to listen on a socket, `services.bookwyrm.activityRedis.unixSocket` and `services.bookwyrm.celeryRedis.unixSocket` can be used instead. 
 
-The Docker deployment of Bookwyrm uses two separate containers of Redis, while this Nix module uses the same instance of Redis for both. NixOS 20.09 does not provide a simple way to run multiple instances of Redis, but you could use [NixOS containers](https://nixos.org/manual/nixos/stable/#ch-containers) to imitate the Docker setup. 
+The Docker deployment of Bookwyrm uses two separate containers of Redis, while this Nix module uses the same instance of Redis for both. NixOS 21.11 does not provide a simple way to run multiple instances of Redis (though [22.05 will](https://github.com/NixOS/nixpkgs/pull/142635)). You can use [NixOS containers](https://nixos.org/manual/nixos/stable/#ch-containers) to imitate the Docker setup, but the setup should work without this.
 
-The module currently does not set up nginx, so you will have to do it yourself, including providing HTTP Basic Authentication for Flower, which otherwise has no inbuilt user accounts. An example, which assumes your Flower was configured with `flowerArgs = [ "--unix_socket=/run/bookwyrm/bookwyrm-flower.sock" ];`:
+The module currently does not set up Nginx, so you will have to do it yourself, including providing HTTP Basic Authentication for Flower, which otherwise has no inbuilt user accounts. An example, which assumes your Flower was configured with `flowerArgs = [ "--unix_socket=/run/bookwyrm/bookwyrm-flower.sock" ];`:
 
 ```nix
   services.nginx.virtualHosts."bookwyrm.example.com" = {
@@ -96,7 +127,7 @@ The module currently does not set up nginx, so you will have to do it yourself, 
   };
   services.nginx.virtualHosts."bookwyrm-flower" = {
     serverName = "flower.bookwyrm.example.com";
-    basicAuthFile = "/var/lib/bookwyrm/htpasswd"; # generate manually with htpasswd from pkgs.apacheHttpd
+    basicAuthFile = "/var/lib/bookwyrm/htpasswd"; # example way of generating: `echo your_username:$(mkpasswd -m sha512crypt)`
     root = "/var/empty";
     locations."/" = {
       proxyPass = "http://unix:/run/bookwyrm/bookwyrm-flower.sock";
@@ -125,7 +156,7 @@ bookwyrm=# CREATE EXTENSION IF NOT EXISTS pg_trgm;
 ```
 
 ## Caveats
-* The non-flake module currently pins `nixos-unstable`. One of the dependencies, `colorthief`, is not available in `nixos-21.05`. `nixos-unstable` is also the default Nixpkgs input to the flake.
+* The non-flake module currently pins Nixpkgs to the same revision as the flake version. 
 * The flake sets `allowUnfree` to `true`. While in non-flake mode Nix will refuse to build Bookwyrm if non-free software is disallowed, the flake version will do so regardless. This is a workaround for the difficulties inherent in enabling non-free with flakes. 
 
 ## Running
