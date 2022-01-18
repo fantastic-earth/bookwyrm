@@ -1,6 +1,6 @@
-# BookWyrm
+# BookWyrm Nix Edition
 
-Social reading and reviewing, decentralized with ActivityPub
+Social reading and reviewing, decentralized with ActivityPub. This branch is a fork of upstream Bookwyrm adapted to run on NixOS (outside of Docker). For more details on this, see [nix/README.md](./nix/README.md) The rest of this document is the upstream README.
 
 ## Contents
 - [Joining BookWyrm](#joining-bookwyrm)
