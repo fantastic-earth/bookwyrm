@@ -28,7 +28,7 @@ function execweb {
 
 function initdb {
     execweb python manage.py migrate
-    execweb python manage.py initdb
+    execweb python manage.py initdb "$@"
 }
 
 function awscommand {
@@ -55,7 +55,7 @@ case "$CMD" in
         docker-compose up --build "$@"
         ;;
     initdb)
-        initdb
+        initdb "$@"
         ;;
     migrate)
         runweb python manage.py migrate "$@"
@@ -80,13 +80,16 @@ case "$CMD" in
         ;;
     update)
         git pull
-        docker-compose build --no-cache
-        docker-compose exec web python manage.py migrate
-        docker-compose exec web python manage.py collectstatic --no-input
-        docker-compose restart
+        docker-compose build
+        runweb python manage.py migrate
+        runweb python manage.py collectstatic --no-input
+        docker-compose up -d
         ;;
     populate_streams)
         runweb python manage.py populate_streams "$@"
+        ;;
+    populate_lists_streams)
+        runweb python manage.py populate_lists_streams $@
         ;;
     populate_suggestions)
         runweb python manage.py populate_suggestions

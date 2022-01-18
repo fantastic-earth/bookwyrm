@@ -4,12 +4,16 @@
 from bookwyrm.settings import *
 
 if (socket := env("REDIS_BROKER_SOCKET", None)) is not None:
-    CELERY_BROKER_URL = "redis+socket://{}?virtual_host=0".format(socket)
+    CELERY_BROKER_URL = "redis+socket://{}?virtual_host={}".format(
+        socket,
+        env("REDIS_BROKER_DB_INDEX", 0)
+    )
     CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 else:
-    CELERY_BROKER_URL = "redis://{}:{}/0".format(
+    CELERY_BROKER_URL = "redis://{}:{}/{}".format(
         env("REDIS_BROKER_HOST"),
-        env("REDIS_BROKER_PORT")
+        env("REDIS_BROKER_PORT"),
+        env("REDIS_BROKER_DB_INDEX", 0)
     )
     CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 

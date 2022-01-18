@@ -9,7 +9,7 @@ r = redis.Redis(
     port=settings.REDIS_ACTIVITY_PORT,
     password=settings.REDIS_ACTIVITY_PASSWORD,
     unix_socket_path=settings.REDIS_ACTIVITY_SOCKET,
-    db=0,
+    db=settings.REDIS_ACTIVITY_DB_INDEX,
 )
 
 
