@@ -394,6 +394,9 @@ in
         ${concatStringsSep "\n" (mapAttrsToList (n: v: ''export ${n}="$(cat ${escapeShellArg v})"'') envSecrets)}
         ${bookwyrm}/bin/python ${bookwyrm}/manage.py migrate --noinput
         ${bookwyrm}/bin/python ${bookwyrm}/manage.py collectstatic --noinput --clear
+        # --use-storage will output directly to STATIC_ROOT; without it, the sass processor 
+        # will try to write to the Nix store
+        ${bookwyrm}/bin/python ${bookwyrm}/manage.py compilescss --use-storage
       '';
 
       script = ''
