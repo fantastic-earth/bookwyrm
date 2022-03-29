@@ -392,6 +392,7 @@ in
       preStart = ''
         ${concatStringsSep "\n" (mapAttrsToList (n: v: ''export ${n}="$(cat ${escapeShellArg v})"'') envSecrets)}
         ${bookwyrm}/libexec/bookwyrm/manage.py migrate --noinput
+        ${bookwyrm}/libexec/bookwyrm/update.sh
         ${bookwyrm}/libexec/bookwyrm/manage.py collectstatic --noinput --clear
         # --use-storage will output directly to STATIC_ROOT; without it, the sass processor 
         # will try to write to the Nix store
