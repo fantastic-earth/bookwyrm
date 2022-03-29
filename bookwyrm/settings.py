@@ -11,7 +11,7 @@ from django.utils.translation import gettext_lazy as _
 env = Env()
 env.read_env()
 DOMAIN = env("DOMAIN")
-VERSION = "0.3.1"
+VERSION = "0.3.4"
 
 RELEASE_API = env(
     "RELEASE_API",
@@ -21,7 +21,7 @@ RELEASE_API = env(
 PAGE_LENGTH = env("PAGE_LENGTH", 15)
 DEFAULT_LANGUAGE = env("DEFAULT_LANGUAGE", "English")
 
-JS_CACHE = "a60e5a55"
+JS_CACHE = "bc93172a"
 
 # email
 EMAIL_BACKEND = env("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
@@ -90,6 +90,7 @@ INSTALLED_APPS = [
     "sass_processor",
     "bookwyrm",
     "celery",
+    "django_celery_beat",
     "imagekit",
     "storages",
 ]
@@ -188,6 +189,7 @@ STATICFILES_FINDERS = [
 ]
 
 SASS_PROCESSOR_INCLUDE_FILE_PATTERN = r"^.+\.[s]{0,1}(?:a|c)ss$"
+SASS_PROCESSOR_ENABLED = True
 
 SASS_PROCESSOR_INCLUDE_DIRS = [
     os.path.join(BASE_DIR, ".css-config-sample"),
@@ -296,6 +298,7 @@ LANGUAGES = [
     ("no-no", _("Norsk (Norwegian)")),
     ("pt-br", _("Português do Brasil (Brazilian Portuguese)")),
     ("pt-pt", _("Português Europeu (European Portuguese)")),
+    ("ro-ro", _("Română (Romanian)")),
     ("sv-se", _("Svenska (Swedish)")),
     ("zh-hans", _("简体中文 (Simplified Chinese)")),
     ("zh-hant", _("繁體中文 (Traditional Chinese)")),

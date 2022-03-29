@@ -82,6 +82,9 @@ case "$CMD" in
     collectstatic)
         runweb python manage.py collectstatic --no-input
         ;;
+    compilemessages)
+        runweb django-admin compilemessages --ignore venv $@
+        ;;
     build)
         docker-compose build
         ;;
@@ -116,6 +119,7 @@ case "$CMD" in
     update)
         git pull
         docker-compose build
+        # ./update.sh
         runweb python manage.py migrate
         runweb python manage.py collectstatic --no-input
         docker-compose up -d
@@ -168,6 +172,7 @@ case "$CMD" in
         ;;
     setup)
         migrate
+        migrate django_celery_beat
         initdb
         runweb python manage.py collectstatic --no-input
         admin_code
@@ -178,6 +183,7 @@ case "$CMD" in
     *)
         set +x # No need to echo echo
         echo "Unrecognised command. Try:"
+        echo "    setup"
         echo "    up [container]"
         echo "    initdb"
         echo "    makemigrations [migration]"
@@ -187,6 +193,7 @@ case "$CMD" in
         echo "    dbshell"
         echo "    restart_celery"
         echo "    collectstatic"
+        echo "    compilemessages"
         echo "    build"
         echo "    clean"
         echo "    populate_streams [--stream=<stream name>]"
