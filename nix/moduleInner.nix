@@ -25,7 +25,6 @@ let
     EMAIL_PORT = (toString cfg.email.port);
     EMAIL_HOST_USER = cfg.email.user;
     EMAIL_USE_TLS = if cfg.email.useTLS then "true" else "false";
-    OL_URL = "https://openlibrary.org";
   };
   # mapping of env variable → its secret file 
   envSecrets = (filterAttrs (_: v: v != null) {
