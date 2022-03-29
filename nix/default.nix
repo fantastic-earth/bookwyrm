@@ -22,9 +22,9 @@ let
     });
 
     postInstall = ''
-      mkdir -p $out/
-      
-      cp ./manage.py $out/
+      mkdir -p $out/libexec/bookwyrm
+
+      cp ./manage.py $out/libexec/bookwyrm
     '';
 
     meta = with lib; {

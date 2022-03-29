@@ -44,7 +44,7 @@ let
   bookwyrmManageScript = (pkgs.writeScriptBin "bookwyrm-manage" ''
     #!/usr/bin/env bash 
     source ${loadEnv}
-    exec ${bookwyrm}/bin/python ${bookwyrm}/manage.py "$@"
+    exec ${bookwyrm}/libexec/bookwyrm/manage.py "$@"
   '');
 in
 {
@@ -392,11 +392,11 @@ in
 
       preStart = ''
         ${concatStringsSep "\n" (mapAttrsToList (n: v: ''export ${n}="$(cat ${escapeShellArg v})"'') envSecrets)}
-        ${bookwyrm}/bin/python ${bookwyrm}/manage.py migrate --noinput
-        ${bookwyrm}/bin/python ${bookwyrm}/manage.py collectstatic --noinput --clear
+        ${bookwyrm}/libexec/bookwyrm/manage.py migrate --noinput
+        ${bookwyrm}/libexec/bookwyrm/manage.py collectstatic --noinput --clear
         # --use-storage will output directly to STATIC_ROOT; without it, the sass processor 
         # will try to write to the Nix store
-        ${bookwyrm}/bin/python ${bookwyrm}/manage.py compilescss --use-storage
+        ${bookwyrm}/libexec/bookwyrm/manage.py compilescss --use-storage
       '';
 
       script = ''
