@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "bookwyrm"
-version = "0.3.1"
-description = ""
+version = "0.3.4"
+description = "Social reading and reviewing, decentralized with ActivityPub"
 authors = ["Mouse Reeve <mousereeve@riseup.net>"]
 
 packages = [ { include = "bookwyrm"}, { include = "celerywyrm" } ]
