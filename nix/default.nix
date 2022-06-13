@@ -5,19 +5,28 @@
 , gettext
 , symlinkJoin
 }:
-let 
+let
   bookwyrmSource = ./..;
   poetryApp = poetry2nix.mkPoetryApplication rec {
     projectDir = bookwyrmSource;
     src = bookwyrmSource;
     python = python39;
 
-    # typing-extensions needs flit
-    # see https://github.com/nix-community/poetry2nix/issues/218
+    # overrides are related to deps not getting the build systems they need
+    # related poetry2nix issues:
+    # https://github.com/nix-community/poetry2nix/issues/218
+    # https://github.com/nix-community/poetry2nix/issues/568
+
     overrides = poetry2nix.overrides.withDefaults (final: prev: {
       typing-extensions = prev.typing-extensions.overridePythonAttrs (
         prevAttrs: {
           buildInputs = (prevAttrs.buildInputs or []) ++ [ final.flit-core ];
+        }
+      );
+
+      click-didyoumean = prev.click-didyoumean.overridePythonAttrs (
+        prevAttrs: {
+          buildInputs = (prevAttrs.buildInputs or []) ++ [ final.poetry ];
         }
       );
     });
@@ -30,7 +39,7 @@ let
         url = "https://anticapitalist.software/";
         free = false;
       };
-    }; 
+    };
   };
   updateScripts = stdenv.mkDerivation {
     name = "bookwyrm-update-scripts";
@@ -67,8 +76,8 @@ let
   };
 # The update scripts need to be able to run manage.py under the Bookwyrm
 # environment, but we don't have access to dependencyEnv when building
-# poetryApp. As an ugly workaround, we patch the scripts with the right paths 
-# separately, and symlinkJoin them with the original environment. 
+# poetryApp. As an ugly workaround, we patch the scripts with the right paths
+# separately, and symlinkJoin them with the original environment.
 in symlinkJoin {
   name = "bookwyrm";
   paths = [
