@@ -4,8 +4,8 @@
       pinnedPkgs = import (pkgs.fetchFromGitHub {
           owner = "NixOS";
           repo = "nixpkgs";
-          rev = "ce8cbe3c01fd8ee2de526ccd84bbf9b82397a510";
-          sha256 = "sha256-u69opCeHUx3CsdIerD0wVSR+DjfDQjnztObqfk9Trqc=";
+          rev = "914ef51ffa88d9b386c71bdc88bffc5273c08ada";
+          sha256 = "sha256-A+oT+aQGhW5lXy8H0cqBLsYtgcnT5glmGOXWQDcGw6I=";
         }) { 
           # we need to inherit config to propagate allowUnfree settings (which
           # are needed for bookwyrm)
