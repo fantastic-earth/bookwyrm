@@ -88,11 +88,12 @@ case "$CMD" in
     build)
         docker-compose build
         ;;
-    clean)
-        clean
-        ;;
     black)
         docker-compose run --rm dev-tools black celerywyrm bookwyrm
+        ;;
+    pylint)
+        # pylint depends on having the app dependencies in place, so we run it in the web container
+        runweb pylint bookwyrm/
         ;;
     prettier)
         docker-compose run --rm dev-tools npx prettier --write bookwyrm/static/js/*.js
@@ -103,6 +104,7 @@ case "$CMD" in
             --config dev-tools/.stylelintrc.js
         ;;
     formatters)
+        runweb pylint bookwyrm/
         docker-compose run --rm dev-tools black celerywyrm bookwyrm
         docker-compose run --rm dev-tools npx prettier --write bookwyrm/static/js/*.js
         docker-compose run --rm dev-tools npx stylelint \
@@ -195,7 +197,6 @@ case "$CMD" in
         echo "    collectstatic"
         echo "    compilemessages"
         echo "    build"
-        echo "    clean"
         echo "    populate_streams [--stream=<stream name>]"
         echo "    populate_lists_streams"
         echo "    populate_suggestions"

@@ -60,6 +60,12 @@ class User(View):
                 request.user,
             )
             .filter(user=user)
+            .exclude(
+                privacy="direct",
+                review__isnull=True,
+                comment__isnull=True,
+                quotation__isnull=True,
+            )
             .select_related(
                 "user",
                 "reply_parent",
@@ -158,7 +164,7 @@ def hide_suggestions(request):
     """not everyone wants user suggestions"""
     request.user.show_suggested_users = False
     request.user.save(broadcast=False, update_fields=["show_suggested_users"])
-    return redirect(request.headers.get("Referer", "/"))
+    return redirect("/")
 
 
 # pylint: disable=unused-argument
