@@ -5,6 +5,8 @@ This is a Nix module for Boookwyrm, allowing for deployment of Bookwyrm natively
 
 ## How to use
 
+Note: Some of these instructions may be out of date and refer to previous NixOS releases.
+
 ### Non-flake use
 [Niv](https://github.com/nmattia/niv) can be used to include the module in a NixOS configuration. In `/etc/nixos` (or, if permissions are a problem, somewhere in your home directory before copying to `/etc/nixos` later) do:
 
