@@ -11,7 +11,7 @@ from django.utils.translation import gettext_lazy as _
 env = Env()
 env.read_env()
 DOMAIN = env("DOMAIN")
-VERSION = "0.4.3"
+VERSION = "0.4.5"
 
 RELEASE_API = env(
     "RELEASE_API",
@@ -191,10 +191,6 @@ STATICFILES_FINDERS = [
 SASS_PROCESSOR_INCLUDE_FILE_PATTERN = r"^.+\.[s]{0,1}(?:a|c)ss$"
 SASS_PROCESSOR_ENABLED = True
 
-SASS_PROCESSOR_INCLUDE_DIRS = [
-    os.path.join(BASE_DIR, ".css-config-sample"),
-]
-
 # minify css is production but not dev
 if not DEBUG:
     SASS_OUTPUT_STYLE = "compressed"
@@ -289,6 +285,7 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = env("LANGUAGE_CODE", "en-us")
 LANGUAGES = [
     ("en-us", _("English")),
+    ("ca-es", _("Català (Catalan)")),
     ("de-de", _("Deutsch (German)")),
     ("es-es", _("Español (Spanish)")),
     ("gl-es", _("Galego (Galician)")),
@@ -297,6 +294,7 @@ LANGUAGES = [
     ("fr-fr", _("Français (French)")),
     ("lt-lt", _("Lietuvių (Lithuanian)")),
     ("no-no", _("Norsk (Norwegian)")),
+    ("pl-pl", _("Polski (Polish)")),
     ("pt-br", _("Português do Brasil (Brazilian Portuguese)")),
     ("pt-pt", _("Português Europeu (European Portuguese)")),
     ("ro-ro", _("Română (Romanian)")),
