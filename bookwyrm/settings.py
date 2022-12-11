@@ -11,7 +11,7 @@ from django.utils.translation import gettext_lazy as _
 env = Env()
 env.read_env()
 DOMAIN = env("DOMAIN")
-VERSION = "0.4.5"
+VERSION = "0.5.3"
 
 RELEASE_API = env(
     "RELEASE_API",
@@ -21,7 +21,7 @@ RELEASE_API = env(
 PAGE_LENGTH = env("PAGE_LENGTH", 15)
 DEFAULT_LANGUAGE = env("DEFAULT_LANGUAGE", "English")
 
-JS_CACHE = "e678183b"
+JS_CACHE = "ad848b97"
 
 # email
 EMAIL_BACKEND = env("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
@@ -147,6 +147,9 @@ LOGGING = {
         "require_debug_true": {
             "()": "django.utils.log.RequireDebugTrue",
         },
+        "ignore_missing_variable": {
+            "()": "bookwyrm.utils.log.IgnoreVariableDoesNotExist",
+        },
     },
     "handlers": {
         # Overrides the default handler to make it log to console
@@ -154,6 +157,7 @@ LOGGING = {
         # console if DEBUG=False)
         "console": {
             "level": LOG_LEVEL,
+            "filters": ["ignore_missing_variable"],
             "class": "logging.StreamHandler",
         },
         # This is copied as-is from the default logger, and is
@@ -363,3 +367,9 @@ else:
 OTEL_EXPORTER_OTLP_ENDPOINT = env("OTEL_EXPORTER_OTLP_ENDPOINT", None)
 OTEL_EXPORTER_OTLP_HEADERS = env("OTEL_EXPORTER_OTLP_HEADERS", None)
 OTEL_SERVICE_NAME = env("OTEL_SERVICE_NAME", None)
+
+TWO_FACTOR_LOGIN_MAX_SECONDS = 60
+
+HTTP_X_FORWARDED_PROTO = env.bool("SECURE_PROXY_SSL_HEADER", False)
+if HTTP_X_FORWARDED_PROTO:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
