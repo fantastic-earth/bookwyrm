@@ -1,7 +1,6 @@
 { stdenv
 , lib
 , poetry2nix
-, python39
 , gettext
 , symlinkJoin
 }:
@@ -10,7 +9,6 @@ let
   poetryApp = poetry2nix.mkPoetryApplication rec {
     projectDir = bookwyrmSource;
     src = bookwyrmSource;
-    python = python39;
 
     # overrides are related to deps not getting the build systems they need
     # related poetry2nix issues:
@@ -27,6 +25,24 @@ let
       click-didyoumean = prev.click-didyoumean.overridePythonAttrs (
         prevAttrs: {
           buildInputs = (prevAttrs.buildInputs or []) ++ [ final.poetry ];
+        }
+      );
+
+      django-sass-processor = prev.django-sass-processor.overridePythonAttrs (
+        prevAttrs: {
+          format = "setuptools";
+        }
+      );
+
+      opentelemetry-util-http = prev.opentelemetry-util-http.overridePythonAttrs (
+        prevAttrs: {
+          format = "setuptools";
+        }
+      );
+
+      django-imagekit = prev. django-imagekit.overridePythonAttrs (
+        prevAttrs: {
+          format = "setuptools";
         }
       );
     });
