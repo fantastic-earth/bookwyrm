@@ -4,17 +4,27 @@
 from bookwyrm.settings import *
 
 # pylint: disable=line-too-long
-if (socket := env("REDIS_BROKER_SOCKET", None)) is not None:
+if (password := env("REDIS_BROKER_PASSWORD", None)) is not None:
+    REDIS_BROKER_PASSWORD = requests.utils.quote(password)
+else:
+    REDIS_BROKER_PASSWORD = None
+REDIS_BROKER_HOST = env("REDIS_BROKER_HOST", "redis_broker")
+REDIS_BROKER_PORT = env("REDIS_BROKER_PORT", 6379)
+REDIS_BROKER_SOCKET = env("REDIS_BROKER_SOCKET", None)
+REDIS_BROKER_DB_INDEX = env("REDIS_BROKER_DB_INDEX", 0)
+
+# pylint: disable=line-too-long
+if REDIS_BROKER_SOCKET is not None:
     CELERY_BROKER_URL = "redis+socket://{}?virtual_host={}".format(
-        socket,
-        env("REDIS_BROKER_DB_INDEX", 0)
+        REDIS_BROKER_SOCKET ,
+        REDIS_BROKER_DB_INDEX,
     )
     CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 else:
     CELERY_BROKER_URL = "redis://{}:{}/{}".format(
-        env("REDIS_BROKER_HOST"),
-        env("REDIS_BROKER_PORT"),
-        env("REDIS_BROKER_DB_INDEX", 0)
+        REDIS_BROKER_HOST,
+        REDIS_BROKER_PORT,
+        REDIS_BROKER_DB_INDEX,
     )
     CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 

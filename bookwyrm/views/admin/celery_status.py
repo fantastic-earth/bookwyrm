@@ -12,6 +12,7 @@ r = redis.Redis(
     host=settings.REDIS_BROKER_HOST,
     port=settings.REDIS_BROKER_PORT,
     password=settings.REDIS_BROKER_PASSWORD,
+    unix_socket_path=settings.REDIS_BROKER_SOCKET,
     db=settings.REDIS_BROKER_DB_INDEX,
 )
 
