@@ -194,13 +194,13 @@ in
       # note that there are assertions to prevent three of these being null
       host = mkOption {
         type = types.nullOr types.str; 
-        default = "127.0.0.1";
+        default = null;
         description = "Activity Redis host address.";
       }; 
 
       port = mkOption {
         type = types.nullOr types.int;
-        default = config.services.redis.port;
+        default = null;
         description = "Activity Redis port.";
       };
 
@@ -225,13 +225,13 @@ in
       # note that there are assertions to prevent all three of these being null
       host = mkOption {
         type = types.nullOr types.str; 
-        default = "127.0.0.1";
+        default = null;
         description = "Activity Redis host address.";
       }; 
 
       port = mkOption {
         type = types.nullOr types.int;
-        default = config.services.redis.port;
+        default = null;
         description = "Activity Redis port.";
       };
 
@@ -349,9 +349,18 @@ in
       ];
     };
 
-    services.redis = optionalAttrs (cfg.activityRedis.createLocally || cfg.celeryRedis.createLocally) {
-      enable = true;
+    services.redis.servers = optionalAttrs cfg.activityRedis.createLocally {
+      bookwyrm-activity = {
+        enable = true;
+      };
+    } // optionalAttrs cfg.celeryRedis.createLocally {
+      bookwyrm-celery = {
+        enable = true;
+      };
     };
+
+    services.bookwyrm.activityRedis.unixSocket = mkIf cfg.activityRedis.createLocally config.services.redis.servers.bookwyrm-activity.unixSocket;
+    services.bookwyrm.celeryRedis.unixSocket =  mkIf cfg.celeryRedis.createLocally config.services.redis.servers.bookwyrm-celery.unixSocket;
 
     systemd.targets.bookwyrm = {
       description = "Target for all bookwyrm services";
