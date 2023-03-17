@@ -34,6 +34,7 @@ class Status(OrderedCollectionPageMixin, BookWyrmModel):
     raw_content = models.TextField(blank=True, null=True)
     mention_users = fields.TagField("User", related_name="mention_user")
     mention_books = fields.TagField("Edition", related_name="mention_book")
+    mention_hashtags = fields.TagField("Hashtag", related_name="mention_hashtag")
     local = models.BooleanField(default=True)
     content_warning = fields.CharField(
         max_length=500, blank=True, null=True, activitypub_field="summary"
@@ -80,7 +81,7 @@ class Status(OrderedCollectionPageMixin, BookWyrmModel):
     def save(self, *args, **kwargs):
         """save and notify"""
         if self.reply_parent:
-            self.thread_id = self.reply_parent.thread_id or self.reply_parent.id
+            self.thread_id = self.reply_parent.thread_id or self.reply_parent_id
 
         super().save(*args, **kwargs)
 
@@ -327,6 +328,9 @@ class Quotation(BookStatus):
     quote = fields.HtmlField()
     raw_quote = models.TextField(blank=True, null=True)
     position = models.IntegerField(
+        validators=[MinValueValidator(0)], null=True, blank=True
+    )
+    endposition = models.IntegerField(
         validators=[MinValueValidator(0)], null=True, blank=True
     )
     position_mode = models.CharField(

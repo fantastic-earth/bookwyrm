@@ -3,9 +3,9 @@ import re
 from urllib.parse import urlparse
 
 from django.apps import apps
-from django.contrib.auth.models import AbstractUser, Group
+from django.contrib.auth.models import AbstractUser
 from django.contrib.postgres.fields import ArrayField, CICharField
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.dispatch import receiver
 from django.db import models, transaction
 from django.utils import timezone
@@ -356,8 +356,14 @@ class User(OrderedCollectionPageMixin, AbstractUser):
 
             # make users editors by default
             try:
-                self.groups.add(Group.objects.get(name="editor"))
-            except Group.DoesNotExist:
+                group = (
+                    apps.get_model("bookwyrm.SiteSettings")
+                    .objects.get()
+                    .default_user_auth_group
+                )
+                if group:
+                    self.groups.add(group)
+            except ObjectDoesNotExist:
                 # this should only happen in tests
                 pass
 
@@ -373,6 +379,7 @@ class User(OrderedCollectionPageMixin, AbstractUser):
         """We don't actually delete the database entry"""
         # pylint: disable=attribute-defined-outside-init
         self.is_active = False
+        self.avatar = ""
         # skip the logic in this class's save()
         super().save(*args, **kwargs)
 
@@ -462,7 +469,7 @@ class KeyPair(ActivitypubMixin, BookWyrmModel):
         return super().save(*args, **kwargs)
 
 
-@app.task(queue=LOW)
+@app.task(queue=LOW, ignore_result=True)
 def set_remote_server(user_id):
     """figure out the user's remote server in the background"""
     user = User.objects.get(id=user_id)
@@ -506,7 +513,7 @@ def get_or_create_remote_server(domain, refresh=False):
     return server
 
 
-@app.task(queue=LOW)
+@app.task(queue=LOW, ignore_result=True)
 def get_remote_reviews(outbox):
     """ingest reviews by a new remote bookwyrm user"""
     outbox_page = outbox + "?page=true&type=Review"
@@ -525,6 +532,11 @@ def preview_image(instance, *args, **kwargs):
     """create preview images when user is updated"""
     if not ENABLE_PREVIEW_IMAGES:
         return
+
+    # don't call the task for remote users
+    if not instance.local:
+        return
+
     changed_fields = instance.field_tracker.changed()
 
     if len(changed_fields) > 0:

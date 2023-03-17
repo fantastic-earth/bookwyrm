@@ -11,7 +11,7 @@ from django.utils.translation import gettext_lazy as _
 env = Env()
 env.read_env()
 DOMAIN = env("DOMAIN")
-VERSION = "0.5.3"
+VERSION = "0.6.0"
 
 RELEASE_API = env(
     "RELEASE_API",
@@ -21,7 +21,7 @@ RELEASE_API = env(
 PAGE_LENGTH = env("PAGE_LENGTH", 15)
 DEFAULT_LANGUAGE = env("DEFAULT_LANGUAGE", "English")
 
-JS_CACHE = "ad848b97"
+JS_CACHE = "a7d4e720"
 
 # email
 EMAIL_BACKEND = env("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
@@ -101,6 +101,7 @@ MIDDLEWARE = [
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+    "csp.middleware.CSPMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "bookwyrm.middleware.TimezoneMiddleware",
     "bookwyrm.middleware.IPBlocklistMiddleware",
@@ -193,7 +194,8 @@ STATICFILES_FINDERS = [
 ]
 
 SASS_PROCESSOR_INCLUDE_FILE_PATTERN = r"^.+\.[s]{0,1}(?:a|c)ss$"
-SASS_PROCESSOR_ENABLED = True
+# when debug is disabled, make sure to compile themes once with `./bw-dev compile_themes`
+SASS_PROCESSOR_ENABLED = DEBUG
 
 # minify css is production but not dev
 if not DEBUG:
@@ -207,7 +209,10 @@ REDIS_ACTIVITY_PORT = env("REDIS_ACTIVITY_PORT", 6379)
 REDIS_ACTIVITY_PASSWORD = env("REDIS_ACTIVITY_PASSWORD", None)
 REDIS_ACTIVITY_SOCKET = env("REDIS_ACTIVITY_SOCKET", None)
 REDIS_ACTIVITY_DB_INDEX = env("REDIS_ACTIVITY_DB_INDEX", 0)
-
+REDIS_ACTIVITY_URL = env(
+    "REDIS_ACTIVITY_URL",
+    f"redis://:{REDIS_ACTIVITY_PASSWORD}@{REDIS_ACTIVITY_HOST}:{REDIS_ACTIVITY_PORT}/{REDIS_ACTIVITY_DB_INDEX}",
+)
 MAX_STREAM_LENGTH = int(env("MAX_STREAM_LENGTH", 200))
 
 STREAMS = [
@@ -292,6 +297,7 @@ LANGUAGES = [
     ("ca-es", _("Català (Catalan)")),
     ("de-de", _("Deutsch (German)")),
     ("es-es", _("Español (Spanish)")),
+    ("eu-es", _("Euskara (Basque)")),
     ("gl-es", _("Galego (Galician)")),
     ("it-it", _("Italiano (Italian)")),
     ("fi-fi", _("Suomi (Finnish)")),
@@ -329,12 +335,15 @@ IMAGEKIT_DEFAULT_CACHEFILE_STRATEGY = "bookwyrm.thumbnail_generation.Strategy"
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+CSP_ADDITIONAL_HOSTS = env.list("CSP_ADDITIONAL_HOSTS", [])
 
 # Storage
 
 PROTOCOL = "http"
 if USE_HTTPS:
     PROTOCOL = "https"
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 USE_S3 = env.bool("USE_S3", False)
 
@@ -358,18 +367,31 @@ if USE_S3:
     MEDIA_FULL_URL = MEDIA_URL
     STATIC_FULL_URL = STATIC_URL
     DEFAULT_FILE_STORAGE = "bookwyrm.storage_backends.ImagesStorage"
+    CSP_DEFAULT_SRC = ["'self'", AWS_S3_CUSTOM_DOMAIN] + CSP_ADDITIONAL_HOSTS
+    CSP_SCRIPT_SRC = ["'self'", AWS_S3_CUSTOM_DOMAIN] + CSP_ADDITIONAL_HOSTS
 else:
     STATIC_URL = "/static/"
     MEDIA_URL = "/images/"
     MEDIA_FULL_URL = f"{PROTOCOL}://{DOMAIN}{MEDIA_URL}"
     STATIC_FULL_URL = f"{PROTOCOL}://{DOMAIN}{STATIC_URL}"
+    CSP_DEFAULT_SRC = ["'self'"] + CSP_ADDITIONAL_HOSTS
+    CSP_SCRIPT_SRC = ["'self'"] + CSP_ADDITIONAL_HOSTS
+
+CSP_INCLUDE_NONCE_IN = ["script-src"]
 
 OTEL_EXPORTER_OTLP_ENDPOINT = env("OTEL_EXPORTER_OTLP_ENDPOINT", None)
 OTEL_EXPORTER_OTLP_HEADERS = env("OTEL_EXPORTER_OTLP_HEADERS", None)
 OTEL_SERVICE_NAME = env("OTEL_SERVICE_NAME", None)
 
-TWO_FACTOR_LOGIN_MAX_SECONDS = 60
+TWO_FACTOR_LOGIN_MAX_SECONDS = env.int("TWO_FACTOR_LOGIN_MAX_SECONDS", 60)
+TWO_FACTOR_LOGIN_VALIDITY_WINDOW = env.int("TWO_FACTOR_LOGIN_VALIDITY_WINDOW", 2)
 
 HTTP_X_FORWARDED_PROTO = env.bool("SECURE_PROXY_SSL_HEADER", False)
 if HTTP_X_FORWARDED_PROTO:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Instance Actor for signing GET requests to "secure mode"
+# Mastodon servers.
+# Do not change this setting unless you already have an existing
+# user with the same username - in which case you should change it!
+INSTANCE_ACTOR_USERNAME = "bookwyrm.instance.actor"

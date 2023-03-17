@@ -7,8 +7,8 @@
 
 {% block title %}{{ book|book_title }}{% endblock %}
 
-{% block opengraph_images %}
-    {% include 'snippets/opengraph_images.html' with image=book.preview_image %}
+{% block opengraph %}
+    {% include 'snippets/opengraph.html' with title=book.title description=book|book_description image=book.preview_image %}
 {% endblock %}
 
 {% block content %}
@@ -46,7 +46,7 @@
                         <meta itemprop="isPartOf" content="{{ book.series | escape }}">
                         <meta itemprop="volumeNumber" content="{{ book.series_number }}">
 
-                        ({{ book.series }}{% if book.series_number %} #{{ book.series_number }}{% endif %})
+                        (<a href="{% url 'book-series-by' book.authors.first.id %}?series_name={{ book.series }}">{{ book.series }}{% if book.series_number %} #{{ book.series_number }}{% endif %}</a>)
                     {% endif %}
                 </p>
             {% endif %}
@@ -82,6 +82,8 @@
                             src="{% static "images/no_cover.jpg" %}"
                             alt=""
                             aria-hidden="true"
+                            loading="lazy"
+                            decoding="async"
                         >
                         <span class="cover-caption">
                             <span>{{ book.alt_text }}</span>
@@ -215,10 +217,10 @@
                 {% endif %}
 
 
-                {% with work=book.parent_work %}
+                {% with work=book.parent_work editions_count=book.parent_work.editions.count %}
                 <p>
                     <a href="{{ work.local_path }}/editions" id="tour-other-editions-link">
-                        {% blocktrans trimmed count counter=work.editions.count with count=work.editions.count|intcomma %}
+                        {% blocktrans trimmed count counter=editions_count with count=editions_count|intcomma %}
                             {{ count }} edition
                             {% plural %}
                             {{ count }} editions

@@ -18,6 +18,7 @@ from django.views.decorators.http import require_POST
 from markdown import markdown
 from bookwyrm import forms, models
 from bookwyrm.utils import regex, sanitizer
+from bookwyrm.utils.validate import validate_url_domain
 from .helpers import handle_remote_webfinger, is_api_request
 from .helpers import load_date_in_user_tz_as_utc
 
@@ -58,6 +59,8 @@ class CreateStatus(View):
     # pylint: disable=too-many-branches
     def post(self, request, status_type, existing_status_id=None):
         """create status of whatever type"""
+        next_step = request.META.get("HTTP_REFERER")
+        next_step = validate_url_domain(next_step, "/")
         created = not existing_status_id
         existing_status = None
         if existing_status_id:
@@ -80,7 +83,7 @@ class CreateStatus(View):
             if is_api_request(request):
                 logger.exception(form.errors)
                 return HttpResponseBadRequest()
-            return redirect("/")
+            return redirect(next_step)
 
         status = form.save(request, commit=False)
         status.ready = False
@@ -112,6 +115,19 @@ class CreateStatus(View):
         if status.reply_parent:
             status.mention_users.add(status.reply_parent.user)
 
+        # inspect the text for hashtags
+        for (mention_text, mention_hashtag) in find_or_create_hashtags(content).items():
+            # add them to status mentions fk
+            status.mention_hashtags.add(mention_hashtag)
+
+            # turn the mention into a link
+            content = re.sub(
+                rf"{mention_text}\b(?!@)",
+                rf'<a href="{mention_hashtag.remote_id}" data-mention="hashtag">'
+                + rf"{mention_text}</a>",
+                content,
+            )
+
         # deduplicate mentions
         status.mention_users.set(set(status.mention_users.all()))
 
@@ -134,7 +150,7 @@ class CreateStatus(View):
 
         if is_api_request(request):
             return HttpResponse()
-        return redirect("/")
+        return redirect(next_step)
 
 
 @method_decorator(login_required, name="dispatch")
@@ -167,6 +183,8 @@ def update_progress(request, book_id):  # pylint: disable=unused-argument
 def edit_readthrough(request):
     """can't use the form because the dates are too finnicky"""
     # TODO: remove this, it duplicates the code in the ReadThrough view
+    next_step = request.META.get("HTTP_REFERER")
+    next_step = validate_url_domain(next_step, "/")
     readthrough = get_object_or_404(models.ReadThrough, id=request.POST.get("id"))
 
     readthrough.start_date = load_date_in_user_tz_as_utc(
@@ -198,7 +216,7 @@ def edit_readthrough(request):
 
     if is_api_request(request):
         return HttpResponse()
-    return redirect("/")
+    return redirect(next_step)
 
 
 def find_mentions(user, content):
@@ -230,6 +248,38 @@ def find_mentions(user, content):
         username_dict[f"@{mention_user.username}"] = mention_user
         username_dict[f"@{mention_user.localname}"] = mention_user
     return username_dict
+
+
+def find_or_create_hashtags(content):
+    """detect #hashtags in raw status content
+
+    it stores hashtags case-sensitive, but ensures that an existing
+    hashtag with different case are found and re-used. for example,
+    an existing #BookWyrm hashtag will be found and used even if the
+    status content is using #bookwyrm.
+    """
+    if not content:
+        return {}
+
+    found_hashtags = {t.lower(): t for t in re.findall(regex.HASHTAG, content)}
+    if len(found_hashtags) == 0:
+        return {}
+
+    known_hashtags = {
+        t.name.lower(): t
+        for t in models.Hashtag.objects.filter(
+            Q(name__in=found_hashtags.keys())
+        ).distinct()
+    }
+
+    not_found = found_hashtags.keys() - known_hashtags.keys()
+    for lower_name in not_found:
+        tag_name = found_hashtags[lower_name]
+        mention_hashtag = models.Hashtag(name=tag_name)
+        mention_hashtag.save()
+        known_hashtags[lower_name] = mention_hashtag
+
+    return {found_hashtags[k]: v for k, v in known_hashtags.items()}
 
 
 def format_links(content):
