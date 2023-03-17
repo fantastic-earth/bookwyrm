@@ -24,7 +24,7 @@ let
 
       click-didyoumean = prev.click-didyoumean.overridePythonAttrs (
         prevAttrs: {
-          buildInputs = (prevAttrs.buildInputs or []) ++ [ final.poetry ];
+          nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ final.poetry-core ];
         }
       );
 
@@ -40,9 +40,30 @@ let
         }
       );
 
-      django-imagekit = prev. django-imagekit.overridePythonAttrs (
+      django-imagekit = prev.django-imagekit.overridePythonAttrs (
         prevAttrs: {
           format = "setuptools";
+        }
+      );
+
+      pathspec = prev.pathspec.overridePythonAttrs (
+        prevAttrs: {
+          nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ final.flit-core ];
+        }
+      );
+
+      iniconfig = prev.iniconfig.overridePythonAttrs (
+        prevAttrs: {
+          nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ final.hatchling ];
+        }
+      );
+
+      humanize = prev.humanize.overridePythonAttrs (
+        prevAttrs: {
+          nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ 
+            final.hatchling
+            final.hatch-vcs
+          ];
         }
       );
     });
