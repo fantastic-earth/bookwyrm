@@ -22,7 +22,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """compile"""
         themes_dir = os.path.join(
-            settings.BASE_DIR, "bookwyrm", "static", "css", "themes", "*.scss"
+            settings.STATIC_ROOT, "css", "themes", "*.scss"
         )
         for theme_scss in glob.glob(themes_dir):
             basename, _ = os.path.splitext(theme_scss)
