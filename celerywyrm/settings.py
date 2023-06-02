@@ -3,6 +3,8 @@
 # pylint: disable=unused-wildcard-import
 from bookwyrm.settings import *
 
+QUERY_TIMEOUT = env.int("CELERY_QUERY_TIMEOUT", env.int("QUERY_TIMEOUT", 30))
+
 # pylint: disable=line-too-long
 if (password := env("REDIS_BROKER_PASSWORD", None)) is not None:
     REDIS_BROKER_PASSWORD = requests.utils.quote(password)
@@ -45,7 +47,7 @@ CELERY_TIMEZONE = env("TIME_ZONE", "UTC")
 CELERY_WORKER_CONCURRENCY = env("CELERY_WORKER_CONCURRENCY", None)
 CELERY_TASK_SOFT_TIME_LIMIT = env("CELERY_TASK_SOFT_TIME_LIMIT", None)
 
-FLOWER_PORT = env("FLOWER_PORT", None)
+FLOWER_PORT = env.int("FLOWER_PORT", 8888)
 
 INSTALLED_APPS = INSTALLED_APPS + [
     "celerywyrm",
