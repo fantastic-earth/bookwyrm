@@ -25,6 +25,7 @@ let
     EMAIL_PORT = (toString cfg.email.port);
     EMAIL_HOST_USER = cfg.email.user;
     EMAIL_USE_TLS = if cfg.email.useTLS then "true" else "false";
+    EMAIL_USE_SSL = if cfg.email.useSSL then "true" else "false";
   };
   # mapping of env variable → its secret file 
   envSecrets = (filterAttrs (_: v: v != null) {
@@ -287,7 +288,13 @@ in
       useTLS = mkOption {
         type = types.bool;
         default = true;
-        description = "Whether to use TLS for communication with the SMTP server.";
+        description = "Whether to use STARTTLS when connecting to the  SMTP server. Exclusive with `useSSL`. Corresponds to Django's `EMAIL_USE_TLS`.";
+      };
+
+      useSSL = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Whether to use implicit TLS when connecting with the SMTP server. Exclusive with `useTLS`. Corresponds to Django's `EMAIL_USE_SSL`.";
       };
     };
   };
@@ -304,6 +311,9 @@ in
       }
       { assertion = cfg.celeryRedis.unixSocket != null || (cfg.celeryRedis.host != null && cfg.celeryRedis.port != null);
         message = "config.services.bookwyrm.celeryRedis needs to have either a unixSocket defined, or both a host and a port defined.";
+      }
+      { assertion = cfg.email.useTLS && cfg.email.useSSL;
+        message = "Only one of email.useTLS or email.useSSL can be set to true at a time.";
       }
     ];
 
