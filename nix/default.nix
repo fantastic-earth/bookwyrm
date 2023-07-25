@@ -153,7 +153,7 @@ let
             inherit (prevAttrs) src;
             name = "${prevAttrs.pname}-${prevAttrs.version}";
             sourceRoot = "${prevAttrs.pname}-${prevAttrs.version}/${prevAttrs.cargoRoot}";
-            sha256 = "sha256-38q81vRf8QHR8lFRM2KbH7Ng5nY7nmtWRMoPWS9VO/U=";
+            sha256 = "sha256-hkuoICa/suMXlr4u95JbMlFzi27lJqJRmWnX3nZfzKU=";
           };
         }
       );
