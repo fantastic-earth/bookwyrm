@@ -34,7 +34,9 @@ let
     EMAIL_HOST_PASSWORD = cfg.email.passwordFile;
   });
 
-  redisCreateLocally = cfg.celeryRedis.createLocally || cfg.activityRedis.createLocally;
+  locallyCreatedRedisUnits =
+    optional cfg.activityRedis.createLocally "redis-bookwyrm-activity.service"
+    ++ optional cfg.celeryRedis.createLocally "redis-bookwyrm-celery.service";
 
   loadEnv = (pkgs.writeScript "load-bookwyrm-env" ''
     #!/usr/bin/env bash
@@ -391,11 +393,11 @@ in
         "redis.service"
         "postgresql.service"
         "bookwyrm-celery.service"
-      ] ++ optional redisCreateLocally "redis.service"
+      ] ++ locallyCreatedRedisUnits
         ++ optional cfg.database.createLocally "postgresql.service"; 
       bindsTo = [
         "bookwyrm-celery.service"
-      ] ++ optional redisCreateLocally "redis.service"
+      ] ++ locallyCreatedRedisUnits
         ++ optional cfg.database.createLocally "postgresql.service";
       wantedBy = [ "bookwyrm.target" ];
       partOf = [ "bookwyrm.target" ];
@@ -429,10 +431,8 @@ in
       description = "Celery service for bookwyrm.";
       after = [ 
         "network.target"
-      ] ++ optional redisCreateLocally "redis.service";
-      bindsTo = optionals redisCreateLocally [
-        "redis.service"
-      ];
+      ] ++ locallyCreatedRedisUnits;
+      bindsTo = locallyCreatedRedisUnits;
       wantedBy = [ "bookwyrm.target" ];
       partOf = [ "bookwyrm.target" ];
       environment = env;
@@ -457,10 +457,8 @@ in
         "network.target"
         "redis.service"
         "bookwyrm-celery.service"
-      ] ++ optional redisCreateLocally "redis.service";
-      bindsTo = optionals redisCreateLocally [
-        "redis.service"
-      ];
+      ] ++ locallyCreatedRedisUnits;
+      bindsTo = locallyCreatedRedisUnits;
       wantedBy = [ "bookwyrm.target" ];
       partOf = [ "bookwyrm.target" ];
       environment = env;
