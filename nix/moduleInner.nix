@@ -289,13 +289,13 @@ in
 
       useTLS = mkOption {
         type = types.bool;
-        default = true;
+        default = false;
         description = "Whether to use STARTTLS when connecting to the  SMTP server. Exclusive with `useSSL`. Corresponds to Django's `EMAIL_USE_TLS`.";
       };
 
       useSSL = mkOption {
         type = types.bool;
-        default = true;
+        default = false;
         description = "Whether to use implicit TLS when connecting with the SMTP server. Exclusive with `useTLS`. Corresponds to Django's `EMAIL_USE_SSL`.";
       };
     };
@@ -314,7 +314,7 @@ in
       { assertion = cfg.celeryRedis.unixSocket != null || (cfg.celeryRedis.host != null && cfg.celeryRedis.port != null);
         message = "config.services.bookwyrm.celeryRedis needs to have either a unixSocket defined, or both a host and a port defined.";
       }
-      { assertion = cfg.email.useTLS && cfg.email.useSSL;
+      { assertion = !(cfg.email.useTLS && cfg.email.useSSL);
         message = "Only one of email.useTLS or email.useSSL can be set to true at a time.";
       }
     ];
