@@ -446,7 +446,7 @@ in
 
       script = ''
         ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: ''export ${n}="$(cat ${escapeShellArg v})"'') envSecrets)}
-        exec ${bookwyrm}/bin/celery -A celerywyrm worker --loglevel=INFO -Q high_priority,medium_priority,low_priority
+        exec ${bookwyrm}/bin/celery -A celerywyrm worker --loglevel=INFO -Q high_priority,medium_priority,low_priority,streams,images,suggested_users,email,connectors,lists,inbox,imports,import_triggered,broadcast,misc
       '';
 
     };
