@@ -4,6 +4,7 @@ with lib;
 
 let 
   cfg = config.services.bookwyrm;
+  redisCfg = config.services.redis.servers;
   env = {
     DEBUG = if cfg.debug then "true" else "false";
     DOMAIN = cfg.domain;
@@ -343,6 +344,8 @@ in
         group = "bookwyrm";
         useDefaultShell = true;
         isSystemUser = true;
+        extraGroups = optional cfg.activityRedis.createLocally redisCfg.bookwyrm-activity.user
+            ++ optional cfg.celeryRedis.createLocally redisCfg.bookwyrm-celery.user;
       };
     };
 
