@@ -21,5 +21,8 @@
     ) // 
     {
       nixosModule = ./nix/module.nix;
+      overlay = (final: prev: {
+        bookwyrm = prev.callPackage ./nix/default.nix { };
+      });
     };
 }
