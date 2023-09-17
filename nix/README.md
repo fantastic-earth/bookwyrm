@@ -2,10 +2,7 @@
 
 This is a Nix module for Boookwyrm, allowing for deployment of Bookwyrm natively on NixOS without Docker. It has been used in production at <https://books.underscore.world> without critical issues, but is also rough around the edges. 
 
-
 ## How to use
-
-Note: Some of these instructions may be out of date and refer to previous NixOS releases.
 
 ### Non-flake use
 [Niv](https://github.com/nmattia/niv) can be used to include the module in a NixOS configuration. In `/etc/nixos` (or, if permissions are a problem, somewhere in your home directory before copying to `/etc/nixos` later) do:
@@ -35,7 +32,7 @@ Now, the module can be imported as such:
 ```
 
 ### Flake use 
-If you are configuring NixOS with flakes, you can add `github:DeeUnderscore/bookwyrm/nix` as an input. Bookwyrm is available under the `defaultPackage` output, and the module is available under the `nixosModule` output. Example configuration:
+If you are configuring NixOS with flakes, you can add `github:DeeUnderscore/bookwyrm/nix` as an input. Bookwyrm is available under the `defaultPackage` output, an overlay (adding `pkgs.bookwyrm`)is available under the `overlay` output, and the NixOS module is available under the `nixosModule` output. The NixOS module will enable the overlay, and use Bookwyrm built against the configuration's Nixpkgs. Example configuration:
 
 ```nix
 # flake.nix
@@ -47,24 +44,13 @@ If you are configuring NixOS with flakes, you can add `github:DeeUnderscore/book
   {
     nixosConfigurations.example = nixpkgs.lib.nixosSystem {
       # …
-      modules = [ ./configuration.nix ];
-      specialArgs = { inherit bookwyrm; };
+      modules = [ 
+        ./configuration.nix
+        inputs.bookwyrm.nixosModule
+       ];
       # …
     };
   };
-}
-```
-
-```nix
-# configuration.nix
-# configuration.nix
-{ config, pkgs, bookwyrm, ... }:
-{
-  imports = [ 
-    bookwyrm.nixosModule
-  ];
-
-  # …
 }
 ```
 
@@ -98,13 +84,15 @@ Bookwyrm can be enabled with a configuration similar to this:
       password = "password123";
     };
   };
+
+  nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
+    "bookwyrm"
+  ];
 ```
 
 For detailed list options see the `module.nix` source file (there is currently no generated documentation for them). If working with a secret vault (like [sops-nix](https://github.com/Mic92/sops-nix)), secrets can be supplied as file paths instead (for example `services.bookwyrm.secretKeyFile`), per the usual Nixpkgs convention. 
 
-`services.bookwyrm.activityRedis.createLocally` and `services.bookwyrm.celeryRedis.createLocally` will start up Redis locally, and connect to it over TCP (the default for Redis on NixOS 21.11 does not provide a unix socket). If Redis is configured to listen on a socket, `services.bookwyrm.activityRedis.unixSocket` and `services.bookwyrm.celeryRedis.unixSocket` can be used instead. 
-
-The Docker deployment of Bookwyrm uses two separate containers of Redis, while this Nix module uses the same instance of Redis for both. NixOS 21.11 does not provide a simple way to run multiple instances of Redis (though [22.05 will](https://github.com/NixOS/nixpkgs/pull/142635)). You can use [NixOS containers](https://nixos.org/manual/nixos/stable/#ch-containers) to imitate the Docker setup, but the setup should work without this.
+`services.bookwyrm.activityRedis.createLocally` and `services.bookwyrm.celeryRedis.createLocally`, when enabled, will set up separate instances of Redis, and set up Bookwyrm to connect to each via a Unix domain socket. 
 
 The module currently does not set up Nginx, so you will have to do it yourself, including providing HTTP Basic Authentication for Flower, which otherwise has no inbuilt user accounts. An example, which assumes your Flower was configured with `flowerArgs = [ "--unix_socket=/run/bookwyrm/bookwyrm-flower.sock" ];`:
 
@@ -143,6 +131,8 @@ The module currently does not set up Nginx, so you will have to do it yourself, 
 
 ### Imperative setup
 
+> **Note** There are no tests for the instructions in this section. They may be out of date. 
+
 On first run, you will have to initialize the Bookwyrm database: 
 
 ```shellsession
@@ -156,10 +146,6 @@ Additionally, you may have to use a Postgresql superuser to enable some extensio
 bookwyrm=# CREATE EXTENSION IF NOT EXISTS citext;
 bookwyrm=# CREATE EXTENSION IF NOT EXISTS pg_trgm;
 ```
-
-## Caveats
-* The non-flake module currently pins Nixpkgs to the same revision as the flake version. 
-* The flake sets `allowUnfree` to `true`. While in non-flake mode Nix will refuse to build Bookwyrm if non-free software is disallowed, the flake version will do so regardless. This is a workaround for the difficulties inherent in enabling non-free with flakes. 
 
 ## Running
 
