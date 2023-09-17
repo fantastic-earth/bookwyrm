@@ -1,4 +1,7 @@
-{ config, lib, pkgs, bookwyrm, ... }: 
+{ config
+, lib
+, pkgs
+, ... }: 
 
 with lib; 
 
@@ -44,7 +47,7 @@ let
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: "export ${n}=${lib.escapeShellArg v}") env)}
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: ''export ${n}="$(cat ${lib.escapeShellArg v})"'')  envSecrets)} 
   '');
-  bookwyrmManageScript = (pkgs.writeScriptBin "bookwyrm-manage" ''
+  bookwyrmManageScript = bookwyrm: (pkgs.writeScriptBin "bookwyrm-manage" ''
     #!/usr/bin/env bash 
     source ${loadEnv}
     exec ${bookwyrm}/libexec/bookwyrm/manage.py "$@"
@@ -53,6 +56,12 @@ in
 {
   options.services.bookwyrm = {
     enable = mkEnableOption "bookwyrm";
+
+    package = mkOption {
+      type = types.package;
+      default = pkgs.bookwyrm;
+      description = "Bookwyrm package to use";
+    };
 
     user = mkOption { 
       type = types.str;
@@ -320,6 +329,10 @@ in
       }
     ];
 
+    nixpkgs.overlays = [
+
+    ];
+
     services.bookwyrm.secretKeyFile = 
       (mkDefault (toString (pkgs.writeTextFile {
         name = "bookwyrm-secretkeyfile";
@@ -416,15 +429,15 @@ in
       # TODO: Maybe populate static assets at bookwyrm build time?
       preStart = ''
         ${concatStringsSep "\n" (mapAttrsToList (n: v: ''export ${n}="$(cat ${escapeShellArg v})"'') envSecrets)}
-        ${bookwyrm}/libexec/bookwyrm/manage.py migrate --noinput
-        # ${bookwyrm}/libexec/bookwyrm/update.sh
-        ${bookwyrm}/libexec/bookwyrm/manage.py collectstatic --noinput --clear
-        ${bookwyrm}/libexec/bookwyrm/manage.py compile_themes
+        ${cfg.package}/libexec/bookwyrm/manage.py migrate --noinput
+        # ${cfg.package}/libexec/bookwyrm/update.sh
+        ${cfg.package}/libexec/bookwyrm/manage.py collectstatic --noinput --clear
+        ${cfg.package}/libexec/bookwyrm/manage.py compile_themes
       '';
 
       script = ''
         ${concatStringsSep "\n" (mapAttrsToList (n: v: ''export ${n}="$(cat ${escapeShellArg v})"'') envSecrets)}
-        exec ${bookwyrm}/bin/gunicorn bookwyrm.wsgi:application \
+        exec ${cfg.package}/bin/gunicorn bookwyrm.wsgi:application \
           ${concatStringsSep " " (map (elem: "--bind ${elem}") cfg.bindTo)} \
           --umask 0007
       '';
@@ -449,7 +462,7 @@ in
 
       script = ''
         ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: ''export ${n}="$(cat ${escapeShellArg v})"'') envSecrets)}
-        exec ${bookwyrm}/bin/celery -A celerywyrm worker --loglevel=INFO -Q high_priority,medium_priority,low_priority,streams,images,suggested_users,email,connectors,lists,inbox,imports,import_triggered,broadcast,misc
+        exec ${cfg.package}/bin/celery -A celerywyrm worker --loglevel=INFO -Q high_priority,medium_priority,low_priority,streams,images,suggested_users,email,connectors,lists,inbox,imports,import_triggered,broadcast,misc
       '';
 
     };
@@ -475,12 +488,12 @@ in
 
       script = ''
         ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: ''export ${n}="$(cat ${escapeShellArg v})"'') envSecrets)}
-        exec ${bookwyrm}/bin/celery -A celerywyrm flower \
+        exec ${cfg.package}/bin/celery -A celerywyrm flower \
           ${lib.concatStringsSep " " cfg.flowerArgs}
       '';
 
     };
     
-    environment.systemPackages = [ bookwyrmManageScript ];
+    environment.systemPackages = [ (bookwyrmManageScript cfg.package) ];
   };
 }

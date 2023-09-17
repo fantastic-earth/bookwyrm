@@ -20,8 +20,6 @@
       }
     ) // 
     {
-      nixosModule = {pkgs, ...}@args: 
-        import ./nix/moduleInner.nix (args // 
-          { bookwyrm = self.packages.${pkgs.system}.bookwyrm; });
+      nixosModule = ./nix/module.nix;
     };
 }

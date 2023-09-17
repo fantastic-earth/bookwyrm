@@ -1,2 +1,8 @@
-{pkgs, ...}@args:
-  import ./moduleInner.nix (args // ({ bookwyrm = pkgs.callPackage ./default.nix { };}))
+{config, ...}: {
+    imports = [ ./moduleInner.nix ];
+    nixpkgs.overlays = [
+      (final: prev: {
+        bookwyrm = prev.callPackage ./default.nix { };
+      })
+    ];
+  }
