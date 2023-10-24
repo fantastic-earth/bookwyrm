@@ -131,18 +131,6 @@ let
           nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ final.hatchling ];
         }
       );
-
-      pillow = prev.pillow.overridePythonAttrs (
-        prevAttrs: {
-          patches = (prevAttrs.patches or []) ++ [
-            # https://github.com/python-pillow/Pillow/pull/7069
-            (pkgs.fetchpatch {
-              url = "https://github.com/python-pillow/Pillow/commit/d94239ae3d21d8ae03f5120228dc8225faa99bac.patch";
-              hash = "sha256-fTBfXZPefZnOX5AO3lgZ8ya9G+JW2GDl1V/2cdFritk=";
-            })
-          ];
-        }
-      );
     })) ++ [ (final: prev: {
       # current poetry2nix does not have cargo hashes for cryptography 41, but it
       # does override it. We need to append this overlay here to ensure it goes
@@ -153,7 +141,7 @@ let
             inherit (prevAttrs) src;
             name = "${prevAttrs.pname}-${prevAttrs.version}";
             sourceRoot = "${prevAttrs.pname}-${prevAttrs.version}/${prevAttrs.cargoRoot}";
-            sha256 = "sha256-hkuoICa/suMXlr4u95JbMlFzi27lJqJRmWnX3nZfzKU=";
+            sha256 = "sha256-ABCK144//RUJ3AksFHEgqC+kHvoHl1ifpVuqMTkGNH8="; #v41.0.5
           };
         }
       );
