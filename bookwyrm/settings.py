@@ -1,5 +1,6 @@
 """ bookwyrm settings and configuration """
 import os
+import importlib.metadata
 from typing import AnyStr
 
 from environs import Env
@@ -16,12 +17,7 @@ env = Env()
 env.read_env()
 DOMAIN = env("DOMAIN")
 
-with open("VERSION", encoding="utf-8") as f:
-    version = f.read()
-    version = version.replace("\n", "")
-f.close()
-
-VERSION = version
+VERSION = importlib.metadata.version(__package__)
 
 RELEASE_API = env(
     "RELEASE_API",
