@@ -1,6 +1,9 @@
 # Bookwyrm Nix changelog
 This covers changes to the Nix and NixOS packaging of Bookwyrm, not changes to Bookwyrm core itself.
 
+## 0.7.0-nix2
+* Switched to separate flake input for poetry2nix, as poetry2nix is being dropped from Nixpkgs proper (see <https://github.com/NixOS/nixpkgs/pull/263308>). The overlay output of this flake remains unchanged, which means it will break on newer Nixpkgs master, unless the Nixpkgs it is used on is also overlaid with the poetry2nix overlay. The module output of this flake no longer overlays anything over the system Nixpkgs.
+
 ## 0.7.0-nix1
 * Updated to upstream version 0.7.0. See <https://github.com/bookwyrm-social/bookwyrm/releases/tag/v0.7.0>
 
