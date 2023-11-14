@@ -4,14 +4,20 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     utils.url = "github:numtide/flake-utils";
+    poetry2nix = {
+      url = "github:nix-community/poetry2nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "utils";
+    };
   };
 
-  outputs = { self, nixpkgs, utils }:
+  outputs = { self, nixpkgs, utils, ... }@inputs:
     utils.lib.eachDefaultSystem (system:
       let 
         pkgs = import nixpkgs {
           inherit system;
           config.allowUnfree = true;
+          overlays = [ inputs.poetry2nix.overlays.default ];
         };
       in {
         packages.bookwyrm = pkgs.callPackage ./nix/default.nix { };
