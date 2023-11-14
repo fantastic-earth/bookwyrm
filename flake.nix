@@ -26,7 +26,14 @@
       }
     ) // 
     {
-      nixosModule = ./nix/module.nix;
+      nixosModule = { config, pkgs, ... }:
+      {
+        imports = [
+          ./nix/module.nix
+        ];
+
+        services.bookwyrm.package = self.packages.${pkgs.system}.bookwyrm;
+      };
       overlay = (final: prev: {
         bookwyrm = prev.callPackage ./nix/default.nix { };
       });
