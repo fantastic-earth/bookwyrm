@@ -1,5 +1,6 @@
 {
-  description = "Bookwyrm decentralized reading and reviewing server";
+  description = 
+    "NixOS module and package for the Bookwyrm decentralized reading and reviewing server";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
