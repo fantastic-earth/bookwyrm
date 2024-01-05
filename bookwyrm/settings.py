@@ -27,7 +27,7 @@ RELEASE_API = env(
 PAGE_LENGTH = env.int("PAGE_LENGTH", 15)
 DEFAULT_LANGUAGE = env("DEFAULT_LANGUAGE", "English")
 
-JS_CACHE = "ac315a3b"
+JS_CACHE = "8a89cad7"
 
 # email
 EMAIL_BACKEND = env("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
@@ -95,6 +95,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.humanize",
+    "file_resubmit",
     "sass_processor",
     "bookwyrm",
     "celery",
@@ -115,6 +116,7 @@ MIDDLEWARE = [
     "bookwyrm.middleware.IPBlocklistMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "bookwyrm.middleware.FileTooBig",
 ]
 
 ROOT_URLCONF = "bookwyrm.urls"
@@ -239,7 +241,11 @@ if env.bool("USE_DUMMY_CACHE", False):
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.dummy.DummyCache",
-        }
+        },
+        "file_resubmit": {
+            "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+            "LOCATION": "/tmp/file_resubmit_tests/",
+        },
     }
 else:
     if (REDIS_ACTIVITY_SOCKET):
@@ -253,7 +259,11 @@ else:
             "OPTIONS": {
                 "CLIENT_CLASS": "django_redis.client.DefaultClient",
             },
-        }
+        },
+        "file_resubmit": {
+            "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+            "LOCATION": "/tmp/file_resubmit/",
+        },
     }
 
     SESSION_ENGINE = "django.contrib.sessions.backends.cache"
@@ -319,6 +329,7 @@ LANGUAGES = [
     ("pt-pt", _("Português Europeu (European Portuguese)")),
     ("ro-ro", _("Română (Romanian)")),
     ("sv-se", _("Svenska (Swedish)")),
+    ("uk-ua", _("Українська (Ukrainian)")),
     ("zh-hans", _("简体中文 (Simplified Chinese)")),
     ("zh-hant", _("繁體中文 (Traditional Chinese)")),
 ]
@@ -367,9 +378,9 @@ if USE_S3:
     AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
     AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
     AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
-    AWS_S3_CUSTOM_DOMAIN = env("AWS_S3_CUSTOM_DOMAIN")
+    AWS_S3_CUSTOM_DOMAIN = env("AWS_S3_CUSTOM_DOMAIN", None)
     AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME", "")
-    AWS_S3_ENDPOINT_URL = env("AWS_S3_ENDPOINT_URL")
+    AWS_S3_ENDPOINT_URL = env("AWS_S3_ENDPOINT_URL", None)
     AWS_DEFAULT_ACL = "public-read"
     AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}
     # S3 Static settings
