@@ -17,18 +17,6 @@ let
     # https://github.com/nix-community/poetry2nix/issues/568
 
     overrides = (poetry2nix.overrides.withDefaults (final: prev: {
-      typing-extensions = prev.typing-extensions.overridePythonAttrs (
-        prevAttrs: {
-          buildInputs = (prevAttrs.buildInputs or []) ++ [ final.flit-core ];
-        }
-      );
-
-      click-didyoumean = prev.click-didyoumean.overridePythonAttrs (
-        prevAttrs: {
-          nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ final.poetry-core ];
-        }
-      );
-
       django-sass-processor = prev.django-sass-processor.overridePythonAttrs (
         prevAttrs: {
           format = "setuptools";
@@ -41,111 +29,34 @@ let
         }
       );
 
-      pathspec = prev.pathspec.overridePythonAttrs (
-        prevAttrs: {
-          nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ final.flit-core ];
-        }
-      );
-
-      iniconfig = prev.iniconfig.overridePythonAttrs (
-        prevAttrs: {
-          nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ final.hatchling ];
-        }
-      );
-
-      humanize = prev.humanize.overridePythonAttrs (
-        prevAttrs: {
-          nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [
-            final.hatchling
-            final.hatch-vcs
-          ];
-        }
-      );
-
-      kombu = prev.kombu.overridePythonAttrs (
-        prevAttrs: {
-          format = "setuptools";
-
-          # https://github.com/celery/kombu/pull/1652
-          patchPhase = ''
-            substituteInPlace requirements/test.txt \
-              --replace 'pytz>dev' 'pytz'
-          '';
-        }
-      );
-
-      attrs = prev.attrs.overridePythonAttrs (
-        prevAttrs: {
-          nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [
-            final.hatchling
-            final.hatch-vcs
-            final.hatch-fancy-pypi-readme
-          ];
-        }
-      );
-
-      sqlparse = prev.sqlparse.overridePythonAttrs (
-        prevAttrs: {
-          nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ final.flit-core ];
-        }
-      );
-
-      opentelemetry-exporter-otlp-proto-grpc = prev.opentelemetry-exporter-otlp-proto-grpc.overridePythonAttrs (
-        prevAttrs: {
-          nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ final.hatchling ];
-        }
-      );
-
       opentelemetry-instrumentation-celery = prev.opentelemetry-instrumentation-celery.overridePythonAttrs (
         prevAttrs: {
+          format = "pyproject";
           nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ final.hatchling ];
         }
       );
 
       opentelemetry-instrumentation-dbapi = prev.opentelemetry-instrumentation-dbapi.overridePythonAttrs (
         prevAttrs: {
+          format = "pyproject";
           nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ final.hatchling ];
         }
       );
 
       opentelemetry-instrumentation-psycopg2 = prev.opentelemetry-instrumentation-psycopg2.overridePythonAttrs (
         prevAttrs: {
+          format = "pyproject";
           nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ final.hatchling ];
         }
       );
 
-      opentelemetry-util-http = prev.opentelemetry-util-http.overridePythonAttrs (
+      bw-file-resubmit = prev.bw-file-resubmit.overridePythonAttrs (
         prevAttrs: {
-          nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ final.hatchling ];
+          format = "pyproject";
+          nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ final.setuptools-scm ];
         }
       );
-
-      opentelemetry-instrumentation-wsgi = prev.opentelemetry-instrumentation-wsgi.overridePythonAttrs (
-        prevAttrs: {
-          nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ final.hatchling ];
-        }
-      );
-
-      opentelemetry-instrumentation-django = prev.opentelemetry-instrumentation-django.overridePythonAttrs (
-        prevAttrs: {
-          nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ final.hatchling ];
-        }
-      );
-    })) ++ [ (final: prev: {
-      # current poetry2nix does not have cargo hashes for cryptography 41, but it
-      # does override it. We need to append this overlay here to ensure it goes
-      # after the defaults.
-      cryptography = prev.cryptography.overridePythonAttrs (
-        prevAttrs: {
-          cargoDeps = pkgs.rustPlatform.fetchCargoTarball {
-            inherit (prevAttrs) src;
-            name = "${prevAttrs.pname}-${prevAttrs.version}";
-            sourceRoot = "${prevAttrs.pname}-${prevAttrs.version}/${prevAttrs.cargoRoot}";
-            sha256 = "sha256-ABCK144//RUJ3AksFHEgqC+kHvoHl1ifpVuqMTkGNH8="; #v41.0.5
-          };
-        }
-      );
-    }) ];
+    }));
 
     meta = with lib; {
       homepage = "https://bookwyrm.social/";
