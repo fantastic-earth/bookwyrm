@@ -1,6 +1,10 @@
 # Bookwyrm Nix changelog
 This covers changes to the Nix and NixOS packaging of Bookwyrm, not changes to Bookwyrm core itself.
 
+
+## 0.7.2-nix1
+* Updated to upstream version 0.7.2. See <https://github.com/bookwyrm-social/bookwyrm/releases/tag/v0.7.2>. Note that upstream requires some Nginx configuration changes. Since the NixOS module here does not supply any Nginx configuration, these changes have to be applied by NixOS users of the module as well.
+
 ## 0.7.1-nix1
 * Updated to upstream vesion 0.7.1. See <https://github.com/bookwyrm-social/bookwyrm/releases/tag/v0.7.1>
 * Tweaked local poetry2nix overrides. If this causes problems, ensure Bookwyrm is being built against recent poetry2nix (the flake locked version works).
