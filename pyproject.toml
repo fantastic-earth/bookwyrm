@@ -8,48 +8,53 @@ packages = [ { include = "bookwyrm"}, { include = "celerywyrm" } ]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-aiohttp = "3.9.0"
+aiohttp = "3.9.2"
 bleach = "5.0.1"
-celery = "5.2.7"
-colorthief = "0.2.1"
-Django = "3.2.23"
-django-celery-beat = "2.4.0"
+boto3 = "^1.26"
 bw-file-resubmit = "0.6.0rc2"
-django-compressor = "4.3.1"
+celery = "5.3.1"
+colorthief = "0.2.1"
+Django = "3.2.25"
+django-celery-beat = "2.5.0"
+django-compressor = "4.4"
+django-csp = "3.7"
 django-imagekit = "4.1.0"
 django-model-utils = "4.3.1"
+django-pgtrigger = "4.11.0"
+django-redis = "5.2.0"
 django-sass-processor = "1.2.2"
-django-csp = "3.7"
+django-storages = { version = "^1.13", extras = [ "azure" ] }
 environs = "9.5.0"
-flower = "1.2.0"
+flower = "2.0.0"
 gunicorn = "20.0.4"
 libsass = "0.22.0"
 Markdown = "3.4.1"
+opentelemetry-api = "1.16.0"
+opentelemetry-exporter-otlp-proto-grpc = "1.16.0"
+opentelemetry-instrumentation-celery = "0.37b0"
+opentelemetry-instrumentation-django = "0.37b0"
+opentelemetry-instrumentation-psycopg2= "0.37b0"
+opentelemetry-sdk = "1.16.0"
 packaging = ">=21.3"
-Pillow = "10.0.1"
+Pillow = "10.2.0"
+protobuf = "^3.20.1"
 psycopg2 = "2.9.5"
 pycryptodome = "3.19.1"
+pyotp = "2.8.0"
 python-dateutil = "2.8.2"
+pytz = "^2022.7"
+qrcode = "7.3.1"
 redis = "4.5.4"
 requests = "2.31.0"
 responses = "0.22.0"
-pytz = "^2022.7"
-boto3 = "^1.26"
-django-storages = { version = "^1.13", extras = [ "azure" ] }
-django-redis = "5.2.0"
-opentelemetry-api = "1.16.0"
-opentelemetry-sdk = "1.16.0"
-opentelemetry-exporter-otlp-proto-grpc = "1.16.0"
-opentelemetry-instrumentation-django = "0.37b0"
-opentelemetry-instrumentation-celery = "0.37b0"
-opentelemetry-instrumentation-psycopg2= "0.37b0"
-protobuf = "^3.20.1"
-pyotp = "2.8.0"
-qrcode = "7.3.1"
 
 [tool.poetry.dev-dependencies]
-black = { version = "^20.8b1",  allow-prereleases = true}
+black = { version = "^22",  allow-prereleases = true}
+
+[tool.black]
+required-version = "22"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
