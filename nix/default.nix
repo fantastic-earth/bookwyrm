@@ -56,7 +56,35 @@ let
           nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ final.setuptools-scm ];
         }
       );
-    }));
+
+      marshmallow =  prev.marshmallow.overridePythonAttrs (
+        prevAttrs: {
+          format = "pyproject";
+          nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ final.flit-core ];
+        }
+      );
+
+      django-pgtrigger = prev.django-pgtrigger.overridePythonAttrs (
+        prevAttrs: {
+          format = "pyproject";
+          nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ final.poetry-core ];
+        }
+      );
+    })) ++ [ (final: prev: {
+      # current poetry2nix does not have cargo hashes for the locked versu of 
+      # cryptography but it does override it. We need to append this overlay 
+      # here to ensure it goes after the defaults.
+      cryptography = prev.cryptography.overridePythonAttrs (
+        prevAttrs: {
+          cargoDeps = pkgs.rustPlatform.fetchCargoTarball {
+            inherit (prevAttrs) src;
+            name = "${prevAttrs.pname}-${prevAttrs.version}";
+            sourceRoot = "${prevAttrs.pname}-${prevAttrs.version}/${prevAttrs.cargoRoot}";
+            sha256 = "sha256-Pw3ftpcDMfZr/w6US5fnnyPVsFSB9+BuIKazDocYjTU="; #v42.0.5
+          };
+        }
+      );
+    }) ];
 
     meta = with lib; {
       homepage = "https://bookwyrm.social/";
