@@ -426,7 +426,6 @@ in
       preStart = ''
         ${concatStringsSep "\n" (mapAttrsToList (n: v: ''export ${n}="$(cat ${escapeShellArg v})"'') envSecrets)}
         ${cfg.package}/libexec/bookwyrm/manage.py migrate --noinput
-        # ${cfg.package}/libexec/bookwyrm/update.sh
         ${cfg.package}/libexec/bookwyrm/manage.py collectstatic --noinput --clear
         ${cfg.package}/libexec/bookwyrm/manage.py compile_themes
       '';

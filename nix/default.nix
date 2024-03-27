@@ -109,24 +109,9 @@ let
     installPhase = ''
       mkdir -p $out/libexec/bookwyrm
 
-      patchShebangs update.sh manage.py
+      patchShebangs manage.py
 
       cp ./manage.py $out/libexec/bookwyrm
-
-      cp ./update.sh $out/libexec/bookwyrm/
-      cp -r updates $out/libexec/bookwyrm/
-    '';
-
-    fixupPhase = ''
-      substituteInPlace $out/libexec/bookwyrm/update.sh \
-        --replace './bw-dev runweb python manage.py' "${poetryApp.dependencyEnv}/bin/python $out/libexec/bookwyrm/manage.py" \
-        --replace 'ls -A updates/' "ls -A $out/libexec/bookwyrm/updates" \
-        --replace './updates/$version' "$out/libexec/bookwyrm/updates/"'$version'
-
-      for f in $out/libexec/bookwyrm/updates/*; do
-        substituteInPlace $f \
-          --replace './bw-dev migrate' "${poetryApp.dependencyEnv}/bin/python $out/libexec/bookwyrm/manage.py migrate"
-      done
     '';
   };
 # The update scripts need to be able to run manage.py under the Bookwyrm
@@ -140,3 +125,4 @@ in symlinkJoin {
     updateScripts
   ];
 }
+
