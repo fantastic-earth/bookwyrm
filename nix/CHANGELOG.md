@@ -2,6 +2,10 @@
 This covers changes to the Nix and NixOS packaging of Bookwyrm, not changes to Bookwyrm core itself.
 
 
+
+## 0.7.3-nix1
+* Updated to upstream version 0.7.3. See <https://github.com/bookwyrm-social/bookwyrm/releases/tag/v0.7.3>.
+
 ## 0.7.2-nix1
 * Updated to upstream version 0.7.2. See <https://github.com/bookwyrm-social/bookwyrm/releases/tag/v0.7.2>. Note that upstream requires some Nginx configuration changes. Since the NixOS module here does not supply any Nginx configuration, these changes have to be applied by NixOS users of the module as well.
 
