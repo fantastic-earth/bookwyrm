@@ -70,21 +70,13 @@ let
           nativeBuildInputs = (prevAttrs.nativeBuildInputs or []) ++ [ final.poetry-core ];
         }
       );
-    })) ++ [ (final: prev: {
-      # current poetry2nix does not have cargo hashes for the locked versu of 
-      # cryptography but it does override it. We need to append this overlay 
-      # here to ensure it goes after the defaults.
-      cryptography = prev.cryptography.overridePythonAttrs (
+
+      s3-tar = prev.s3-tar.overridePythonAttrs (
         prevAttrs: {
-          cargoDeps = pkgs.rustPlatform.fetchCargoTarball {
-            inherit (prevAttrs) src;
-            name = "${prevAttrs.pname}-${prevAttrs.version}";
-            sourceRoot = "${prevAttrs.pname}-${prevAttrs.version}/${prevAttrs.cargoRoot}";
-            sha256 = "sha256-Pw3ftpcDMfZr/w6US5fnnyPVsFSB9+BuIKazDocYjTU="; #v42.0.5
-          };
+          format = "setuptools";
         }
       );
-    }) ];
+    }));
 
     meta = with lib; {
       homepage = "https://bookwyrm.social/";
